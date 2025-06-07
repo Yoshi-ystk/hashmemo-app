@@ -25,4 +25,4 @@ venv/
 
 # その他：バックアップやログ
 *.log
-*.bak
+*.bak.DS_Store
