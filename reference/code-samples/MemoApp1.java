@@ -2,7 +2,7 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class Memo1 {
+public class MemoApp1 {
     private static ArrayList<String> memos = new ArrayList<>();
 
     public static void main(String[] args) {
