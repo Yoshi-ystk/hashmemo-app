@@ -18,13 +18,13 @@ public class Memo1 {
             System.out.println("5. 終了");
             System.out.print("選択してください: ");
 
-        try{
-            choice = scanner.nextInt();
-            scanner.nextLine(); // 改行を消費
-        } catch (Exception e) {
-            scanner.nextLine(); // 入力バッファをクリア
-            choice = 0; // 無効な選択をリセット
-        }
+            try {
+                choice = scanner.nextInt();
+                scanner.nextLine(); // 改行を消費
+            } catch (Exception e) {
+                scanner.nextLine(); // 入力バッファをクリア
+                choice = 0; // 無効な選択をリセット
+            }
 
             switch (choice) {
                 case 1:
@@ -41,7 +41,7 @@ public class Memo1 {
                     break;
                 case 5:
                     System.out.println("アプリを終了します。");
-                break;
+                    break;
                 default:
                     System.out.println("無効な選択です。もう一度お試しください。");
             }
@@ -51,11 +51,18 @@ public class Memo1 {
     }
 
     private static void addMemo(Scanner scanner) {
-        System.out.print("メモを入力してください: ");
-        String memo = scanner.nextLine();
-        memos.add(memo);
-        System.out.println("メモを追加しました！");
+    System.out.println("メモを入力してください（`:end` で終了）:");
+    StringBuilder memoBuilder = new StringBuilder();
+    String line;
+
+    while (!(line = scanner.nextLine()).equals(":end")) {
+        memoBuilder.append(line).append(System.lineSeparator());
     }
+
+    String memo = memoBuilder.toString().trim();
+    memos.add(memo);
+    System.out.println("メモを追加しました！");
+}
 
     private static void displayMemos() {
         if (memos.isEmpty()) {
@@ -72,22 +79,23 @@ public class Memo1 {
         displayMemos();
         if (!memos.isEmpty()) {
             System.out.print("削除するメモの番号を入力してください: ");
-           try{
-            int index = scanner.nextInt();
-            scanner.nextLine(); // 改行を消費
+            try {
+                int index = scanner.nextInt();
+                scanner.nextLine(); // 改行を消費
 
-            if (index > 0 && index <= memos.size()) {
-                memos.remove(index - 1);
-                System.out.println("メモを削除しました！");
-            } else {
-                System.out.println("無効な番号です。");
-            }
-              } catch (Exception e) {
+                if (index > 0 && index <= memos.size()) {
+                    memos.remove(index - 1);
+                    System.out.println("メモを削除しました！");
+                } else {
+                    System.out.println("無効な番号です。");
+                }
+            } catch (Exception e) {
                 scanner.nextLine(); // 入力バッファをクリア
                 System.out.println("無効な入力です。番号を整数で入力してください。");
+            }
         }
     }
-    }
+
     private static void searchMemo(Scanner scanner) {
         System.out.print("検索するキーワードを入力してください: ");
         String keyword = scanner.nextLine();
