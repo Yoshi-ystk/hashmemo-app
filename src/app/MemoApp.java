@@ -1,4 +1,3 @@
-/*
 package app;
 
 import cli.MemoCli;
@@ -11,7 +10,8 @@ public class MemoApp {
         cli.run();  // CLIインターフェースの起動
     }
 }
-*/
+/*
+// 以下は接続テスト用です
 package app;
 
 import storage.MemoRepository;
@@ -26,3 +26,4 @@ public class MemoApp {
         repo.connect();
     }
 }
+*/
