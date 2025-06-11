@@ -1,0 +1,20 @@
+# Java: クラスファイル
+*.class
+
+# Eclipse / VSCode
+.vscode/
+.classpath
+.project
+.settings/
+
+# ビルド出力
+/bin/
+/build/
+
+# OS・エディタごとの不要ファイル
+.DS_Store
+Thumbs.db
+
+# ログやバックアップ
+*.log
+*.bak
