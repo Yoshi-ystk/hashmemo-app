@@ -4,8 +4,8 @@
 複数人での共同開発を想定し、タグ機能やメモの管理機能を実装予定です。
 
 ## 開発メンバー
-- 
-
+- iwataha
+- Yoshitaka (Yoshi-ystk)
 
 ## 目的
 - JavaやGitHub、共同開発の実践学習
