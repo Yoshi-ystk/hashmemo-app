@@ -1,3 +1,4 @@
+/*
 package app;
 
 import cli.MemoCli;
@@ -8,5 +9,20 @@ public class MemoApp {
         MemoManager manager = new MemoManager();
         MemoCli cli = new MemoCli(manager);
         cli.run();  // CLIインターフェースの起動
+    }
+}
+*/
+package app;
+
+import storage.MemoRepository;
+
+public class MemoApp {
+
+    public static void main(String[] args) {
+        // MemoRepositoryのインスタンスを作成
+        MemoRepository repo = new MemoRepository();
+
+        // 接続テスト
+        repo.connect();
     }
 }
