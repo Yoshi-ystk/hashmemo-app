@@ -66,13 +66,13 @@ Java製のハッシュタグ付きCLIメモアプリです。
 
 ## 🗂️ ディレクトリ構成（v0.1）
 
-hashmemo-app/
-├── src/           … ソースコード（app, cli, memo, storage など）
-├── storage/       … DBファイル（memos.db）保存予定
-├── docs/          … 補足資料、開発方針など
-├── reference/     … 学習用参考コード（main非公開）
-├── README.md      … このファイル
-└── .gitignore     … ビルド成果物やDB除外設定など
+hashmemo-app/  
+├── src/           … ソースコード（app, cli, memo, storage など）  
+├── storage/       … DBファイル（memos.db）保存予定  
+├── docs/          … 補足資料、開発方針など  
+├── reference/     … 学習用参考コード（main非公開）  
+├── README.md      … このファイル  
+└── .gitignore     … ビルド成果物やDB除外設定など  
 
 ---
 
