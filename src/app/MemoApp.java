@@ -19,20 +19,3 @@ public class MemoApp {
         cli.run();
     }
 }
-/*
-// 以下は接続テスト用です
-package app;
-
-import storage.MemoRepository;
-
-public class MemoApp {
-
-    public static void main(String[] args) {
-        // MemoRepositoryのインスタンスを作成
-        MemoRepository repo = new MemoRepository();
-
-        // 接続テスト
-        repo.connect();
-    }
-}
-*/
