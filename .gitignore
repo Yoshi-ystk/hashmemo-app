@@ -19,3 +19,4 @@ Thumbs.db
 *.log
 *.bak
 .vscode/
+.jar
