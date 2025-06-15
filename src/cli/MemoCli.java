@@ -1,3 +1,12 @@
+/**
+ * MemoCli.java
+ * 
+ * v0.1 - CLI版メモアプリ（DB未実装）
+ * -----------------------------------------
+ * 本ファイルは、コンソール上でメモを追加・一覧表示・検索・削除できる基本機能を提供するクラスです。
+ * DB連携は未実装であり、メモはアプリ実行中のメモリ上のみで管理されます。
+ * 今後のバージョンでは、データの永続化（SQLite等）やGUI化の実装を予定しています。
+ */
 package cli;
 
 import memo.MemoManager;
@@ -39,6 +48,10 @@ public class MemoCli {
         } while (choice != 5);
     }
 
+    /**
+     * ユーザーからの複数行入力を受け取り、MemoManagerに追加します。
+     * 終了キーワードは `:end`。
+     */
     private void addMemo() {
         System.out.println("メモを入力してください（`:end` で終了）:");
         StringBuilder builder = new StringBuilder();
