@@ -5,6 +5,8 @@ import memo.MemoManager;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * CLI（コマンドラインインターフェース）を通じてメモ操作を行うクラス。
@@ -16,6 +18,7 @@ public class MemoCli {
 
     /**
      * MemoCli のコンストラクタ
+     * 
      * @param manager メモの追加・取得・削除・検索を管理する MemoManager
      */
     public MemoCli(MemoManager manager) {
@@ -34,7 +37,8 @@ public class MemoCli {
             System.out.println("2. メモを表示");
             System.out.println("3. メモを削除");
             System.out.println("4. メモを検索");
-            System.out.println("5. 終了");
+            System.out.println("5. タグで検索");
+            System.out.println("6. 終了");
             System.out.print("選択してください: ");
 
             // 入力のバリデーション
@@ -46,14 +50,15 @@ public class MemoCli {
 
             // 選択肢に応じて処理を振り分ける
             switch (choice) {
-                case 1 -> addMemo();       // メモの追加
-                case 2 -> displayMemos();  // メモ一覧の表示
-                case 3 -> deleteMemo();    // メモの削除
-                case 4 -> searchMemo();    // メモの検索
-                case 5 -> System.out.println("アプリを終了します。");
+                case 1 -> addMemo(); // メモの追加
+                case 2 -> displayMemos(); // メモ一覧の表示
+                case 3 -> deleteMemo(); // メモの削除
+                case 4 -> searchMemo(); // メモの検索
+                case 5 -> searchByTag(); // タグで検索
+                case 6 -> System.out.println("アプリを終了します。");
                 default -> System.out.println("無効な選択です。もう一度お試しください。");
             }
-        } while (choice != 5);
+        } while (choice != 6);
     }
 
     /**
@@ -63,16 +68,27 @@ public class MemoCli {
         System.out.print("タイトルを入力してください: ");
         String title = scanner.nextLine();
 
-        System.out.println("メモ本文を入力してください（`:end` で終了）:");
-        StringBuilder builder = new StringBuilder();
+        System.out.println("本文を入力してください（`:end`で終了）:");
+        StringBuilder bodyBuilder = new StringBuilder();
         String line;
-        // 複数行の本文入力を受け付ける
+        // ユーザーが `:end` と入力するまで本文を読み込む
         while (!(line = scanner.nextLine()).equals(":end")) {
-            builder.append(line).append(System.lineSeparator());
+            bodyBuilder.append(line).append(System.lineSeparator());
         }
+        String body = bodyBuilder.toString().trim();
 
-        String content = builder.toString().trim();
-        manager.add(title, content); // MemoManager に渡して追加
+        System.out.print("タグをカンマ区切りで入力してください（例: 仕事,勉強）: ");
+        String tagInput = scanner.nextLine();
+        List<String> tags = Arrays.stream(tagInput.split(","))
+        .map(String::trim)
+        .map(tag -> tag.replaceFirst("^#", ""))  // ← # を除去
+        .filter(s -> !s.isEmpty())
+        .collect(Collectors.toList());
+
+        // Memo インスタンスを作成し追加
+        Memo memo = new Memo(title, body, tags);
+        manager.add(memo);
+
         System.out.println("メモを追加しました！");
     }
 
@@ -121,7 +137,24 @@ public class MemoCli {
         } else {
             System.out.println("=== 検索結果 ===");
             for (Memo memo : results) {
-                System.out.println("- " + memo.getTitle() + "\n" + memo.getContent());
+                System.out.println("- " + memo.getTitle() + "\n" + memo.getBody());
+            }
+        }
+    }
+
+    /**
+     * タグによる検索処理
+     */
+    private void searchByTag() {
+        System.out.print("検索するタグを入力してください: ");
+        String tag = scanner.nextLine().trim();
+        List<Memo> results = manager.searchByTag(tag);
+        if (results.isEmpty()) {
+            System.out.println("指定されたタグに一致するメモはありません。");
+        } else {
+            System.out.println("=== タグ検索結果 ===");
+            for (Memo memo : results) {
+                System.out.println("- " + memo.getTitle() + " [" + String.join(", ", memo.getTags()) + "]");
             }
         }
     }

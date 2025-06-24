@@ -9,9 +9,9 @@ import java.util.List;
 public class MemoManager {
     private final List<Memo> memos = new ArrayList<>();
 
-    // メモを追加（タイトルと本文の両方を受け取る）
-    public void add(String title, String content) {
-        memos.add(new Memo(title, content));
+    // メモを追加
+    public void add(Memo memo) {
+        memos.add(memo);
     }
 
     // 全メモを取得
@@ -32,10 +32,23 @@ public class MemoManager {
     public List<Memo> search(String keyword) {
         List<Memo> results = new ArrayList<>();
         for (Memo memo : memos) {
-            if (memo.getTitle().contains(keyword) || memo.getContent().contains(keyword)) {
+            if (memo.getTitle().contains(keyword) || memo.getBody().contains(keyword)) {
                 results.add(memo);
             }
         }
         return results;
+    }
+
+    // タグで検索
+    public List<Memo> searchByTag(String tag) {
+    String normalizedTag = tag.replaceFirst("^#", "").trim(); // #を除去して正規化
+
+    List<Memo> results = new ArrayList<>();
+    for (Memo memo : memos) {
+        if (memo.getTags().contains(normalizedTag)) {
+            results.add(memo);
+        }
+    }
+    return results;
     }
 }
