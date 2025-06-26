@@ -26,6 +26,14 @@ public class MemoCli {
     }
 
     /**
+     * メモの詳細表示呼び出し 
+     */
+    private void ViewDetails() {
+        List<Memo> memos = manager.getAll();
+        ViewDetails(memos);
+    }
+
+    /**
      * CLI メニューを表示してユーザー入力を受け付けるループ処理
      */
     public void run() {
@@ -51,7 +59,7 @@ public class MemoCli {
             // 選択肢に応じて処理を振り分ける
             switch (choice) {
                 case 1 -> addMemo(); // メモの追加
-                case 2 -> displayMemos(); // メモ一覧の表示
+                case 2 -> ViewDetails(); // メモ一覧の表示
                 case 3 -> deleteMemo(); // メモの削除
                 case 4 -> searchMemo(); // メモの検索
                 case 5 -> searchByTag(); // タグで検索
@@ -156,6 +164,34 @@ public class MemoCli {
             for (Memo memo : results) {
                 System.out.println("- " + memo.getTitle() + " [" + String.join(", ", memo.getTags()) + "]");
             }
+        }
+    }
+
+    /**
+     * メモ一覧から選択、詳細の表示 
+     */
+    private void ViewDetails(List<Memo> memos) {
+        displayMemos();
+        System.out.print("詳細を見たい番号を入力（Enterでキャンセル）: ");
+        String input = scanner.nextLine().trim();
+        if (input.isEmpty()) {
+            System.out.println("キャンセルしました。");
+            return;
+        }
+
+        try {
+            int index = Integer.parseInt(input);
+            if (index >= 1 && index <= memos.size()) {
+                Memo selected = memos.get(index - 1);
+                System.out.println("\n--- メモ詳細 ---");
+                System.out.println("[タイトル] " + selected.getTitle());
+                System.out.println("[タグ] " + String.join(", ", selected.getTags()));
+                System.out.println("[本文] " + selected.getBody());
+            } else {
+                System.out.println("その番号のメモはありません。");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("数字を入力してください！");
         }
     }
 }
