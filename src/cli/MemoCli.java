@@ -115,6 +115,18 @@ public class MemoCli {
             }
         }
     }
+/*
+    private void displayMemos(List<Memo> memos) {
+    if (memos.isEmpty()) {
+        System.out.println("メモはありません。");
+    } else {
+        System.out.println("\n=== メモ一覧 ===");
+        for (int i = 0; i < memos.size(); i++) {
+            System.out.println((i + 1) + ". " + memos.get(i).getTitle());
+        }
+    }
+}
+*/
 
     /**
      * メモを一覧表示してから、削除したいメモの番号を指定
@@ -195,3 +207,59 @@ public class MemoCli {
         }
     }
 }
+    /*
+    private void ViewDetails(List<Memo> memos) {
+        displayMemos(memos);  // 引数ありに変更して汎用化
+        System.out.print("詳細を見たい番号を入力（Enterでキャンセル）: ");
+        String input = scanner.nextLine().trim();
+        if (input.isEmpty()) {
+            System.out.println("キャンセルしました。");
+            return;
+        }
+
+        try {
+            int index = Integer.parseInt(input) - 1;
+            Memo selected = manager.getMemoByIndex(memos, index); // ← ここが責務分離
+            if (selected != null) {
+                showMemoDetails(selected);  // 詳細表示専用メソッドに切り出し
+            } else {
+                System.out.println("その番号のメモはありません。");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("数字を入力してください！");
+        }
+    }
+*/
+
+    /* こんな感じのメソッドをMemoManager.javaに追加…？ 多分…
+    public Memo getMemoByIndex(List<Memo> list, int index) {
+        if (index >= 0 && index < list.size()) {
+            return list.get(index);
+        }
+    return null;
+    }
+    */
+/*
+    private void showMemoDetails(Memo memo) {
+        System.out.println("\n--- メモ詳細 ---");
+        System.out.println("[タイトル] " + memo.getTitle());
+        System.out.println("[タグ] " + String.join(", ", memo.getTags()));
+        System.out.println("[本文] " + memo.getBody());
+    }
+*/
+
+/*
+たとえば…
+case 2 -> ViewDetails(manager.getAll()); // メニュー「メモ表示」→ 全件渡す
+
+private void searchMemo() {
+    System.out.print("検索キーワード: ");
+    String keyword = scanner.nextLine();
+    List<Memo> results = manager.search(keyword);
+    if (results.isEmpty()) {
+        System.out.println("一致するメモはありません。");
+    } else {
+        ViewDetails(results);  // 検索結果をそのまま渡す
+    }
+}
+*/
