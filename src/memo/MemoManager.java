@@ -19,6 +19,14 @@ public class MemoManager {
         return new ArrayList<>(memos);
     }
 
+    //検索されたメモ一覧を取得
+    public Memo getMemoByIndex(List<Memo> list, int index) {
+        if (index >= 0 && index < list.size()) {
+            return list.get(index);
+        }
+            return null;
+        }
+
     // 指定インデックスのメモを削除
     public boolean delete(int index) {
         if (index >= 0 && index < memos.size()) {

@@ -26,14 +26,6 @@ public class MemoCli {
     }
 
     /**
-     * メモの詳細表示呼び出し 
-     */
-    private void ViewDetails() {
-        List<Memo> memos = manager.getAll();
-        ViewDetails(memos);
-    }
-
-    /**
      * CLI メニューを表示してユーザー入力を受け付けるループ処理
      */
     public void run() {
@@ -59,7 +51,7 @@ public class MemoCli {
             // 選択肢に応じて処理を振り分ける
             switch (choice) {
                 case 1 -> addMemo(); // メモの追加
-                case 2 -> ViewDetails(); // メモ一覧の表示
+                case 2 -> ViewDetails(manager.getAll());   //ViewDetails();  メモ一覧の表示
                 case 3 -> deleteMemo(); // メモの削除
                 case 4 -> searchMemo(); // メモの検索
                 case 5 -> searchByTag(); // タグで検索
@@ -111,22 +103,23 @@ public class MemoCli {
             System.out.println("\n=== メモ一覧 ===");
             for (int i = 0; i < memos.size(); i++) {
                 Memo memo = memos.get(i);
-                System.out.println((i + 1) + ". " + memo.getTitle());
+                System.out.println((i + 1) + ". " + memo.getTitle()+ " [" + String.join(", ", memo.getTags()) + "]");
             }
         }
     }
-/*
+
     private void displayMemos(List<Memo> memos) {
     if (memos.isEmpty()) {
         System.out.println("メモはありません。");
     } else {
         System.out.println("\n=== メモ一覧 ===");
         for (int i = 0; i < memos.size(); i++) {
-            System.out.println((i + 1) + ". " + memos.get(i).getTitle());
+            Memo memo = memos.get(i);
+            System.out.println((i + 1) + ". " + memos.get(i).getTitle()+ " [" + String.join(", ", memo.getTags()) + "]");
+            }
         }
     }
-}
-*/
+
 
     /**
      * メモを一覧表示してから、削除したいメモの番号を指定
@@ -153,12 +146,9 @@ public class MemoCli {
         String keyword = scanner.nextLine();
         List<Memo> results = manager.search(keyword);
         if (results.isEmpty()) {
-            System.out.println("キーワードに一致するメモはありません。");
+            System.out.println("一致するメモはありません。");
         } else {
-            System.out.println("=== 検索結果 ===");
-            for (Memo memo : results) {
-                System.out.println("- " + memo.getTitle() + "\n" + memo.getBody());
-            }
+            ViewDetails(results);  // 検索結果をそのまま渡す
         }
     }
 
@@ -176,38 +166,13 @@ public class MemoCli {
             for (Memo memo : results) {
                 System.out.println("- " + memo.getTitle() + " [" + String.join(", ", memo.getTags()) + "]");
             }
+            ViewDetails(results);
         }
     }
 
     /**
-     * メモ一覧から選択、詳細の表示 
+     * メモ、タグ検索後の結果から、詳細表示するものを選択
      */
-    private void ViewDetails(List<Memo> memos) {
-        displayMemos();
-        System.out.print("詳細を見たい番号を入力（Enterでキャンセル）: ");
-        String input = scanner.nextLine().trim();
-        if (input.isEmpty()) {
-            System.out.println("キャンセルしました。");
-            return;
-        }
-
-        try {
-            int index = Integer.parseInt(input);
-            if (index >= 1 && index <= memos.size()) {
-                Memo selected = memos.get(index - 1);
-                System.out.println("\n--- メモ詳細 ---");
-                System.out.println("[タイトル] " + selected.getTitle());
-                System.out.println("[タグ] " + String.join(", ", selected.getTags()));
-                System.out.println("[本文] " + selected.getBody());
-            } else {
-                System.out.println("その番号のメモはありません。");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("数字を入力してください！");
-        }
-    }
-}
-    /*
     private void ViewDetails(List<Memo> memos) {
         displayMemos(memos);  // 引数ありに変更して汎用化
         System.out.print("詳細を見たい番号を入力（Enterでキャンセル）: ");
@@ -229,37 +194,14 @@ public class MemoCli {
             System.out.println("数字を入力してください！");
         }
     }
-*/
 
-    /* こんな感じのメソッドをMemoManager.javaに追加…？ 多分…
-    public Memo getMemoByIndex(List<Memo> list, int index) {
-        if (index >= 0 && index < list.size()) {
-            return list.get(index);
-        }
-    return null;
-    }
-    */
-/*
+    /**
+     * メモの詳細を表示
+     */
     private void showMemoDetails(Memo memo) {
         System.out.println("\n--- メモ詳細 ---");
         System.out.println("[タイトル] " + memo.getTitle());
         System.out.println("[タグ] " + String.join(", ", memo.getTags()));
         System.out.println("[本文] " + memo.getBody());
     }
-*/
-
-/*
-たとえば…
-case 2 -> ViewDetails(manager.getAll()); // メニュー「メモ表示」→ 全件渡す
-
-private void searchMemo() {
-    System.out.print("検索キーワード: ");
-    String keyword = scanner.nextLine();
-    List<Memo> results = manager.search(keyword);
-    if (results.isEmpty()) {
-        System.out.println("一致するメモはありません。");
-    } else {
-        ViewDetails(results);  // 検索結果をそのまま渡す
-    }
 }
-*/
