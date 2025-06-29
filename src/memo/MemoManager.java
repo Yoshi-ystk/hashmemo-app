@@ -54,14 +54,17 @@ public class MemoManager {
 
     // タグで検索
     public List<Memo> searchByTag(String tag) {
-    String normalizedTag = tag.replaceFirst("^#", "").trim(); // #を除去して正規化
+        String normalizedTag = tag.replaceFirst("^#", "").trim(); // #を除去して正規化
 
-    List<Memo> results = new ArrayList<>();
-    for (Memo memo : memos) {
-        if (memo.getTags().contains(normalizedTag)) {
-            results.add(memo);
+        List<Memo> results = new ArrayList<>();
+        for (Memo memo : memos) {
+            for (String t : memo.getTags()) {
+                if (t.contains(normalizedTag)) { // 部分一致で判定
+                    results.add(memo);
+                    break;
+                }
+            }
         }
-    }
-    return results;
+        return results;
     }
 }
