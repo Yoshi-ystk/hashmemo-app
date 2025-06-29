@@ -2,6 +2,8 @@ package memo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * メモの追加・取得・検索・削除を管理するクラス
@@ -66,5 +68,13 @@ public class MemoManager {
             }
         }
         return results;
+    }
+    // タグの一覧
+    public Set<String> getAllTags() {
+    Set<String> allTags = new TreeSet<>();  // ソートして表示
+    for (Memo memo : memos) {
+        allTags.addAll(memo.getTags());
+    }
+    return allTags;
     }
 }

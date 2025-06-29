@@ -38,7 +38,8 @@ public class MemoCli {
             System.out.println("3. メモを削除");
             System.out.println("4. メモを検索");
             System.out.println("5. タグで検索");
-            System.out.println("6. 終了");
+            System.out.println("6. タグ一覧");
+            System.out.println("7. 終了");
             System.out.print("選択してください: ");
 
             // 入力のバリデーション
@@ -55,10 +56,11 @@ public class MemoCli {
                 case 3 -> deleteMemo(); // メモの削除
                 case 4 -> searchMemo(); // メモの検索
                 case 5 -> searchByTag(); // タグで検索
-                case 6 -> System.out.println("アプリを終了します。");
+                case 6 -> showMemosBySelectedTag(); // タグ一覧 → 選択 → 詳細へ
+                case 7 -> System.out.println("アプリを終了します。");
                 default -> System.out.println("無効な選択です。もう一度お試しください。");
             }
-        } while (choice != 6);
+        } while (choice != 7);
     }
 
     /**
@@ -189,6 +191,49 @@ public class MemoCli {
                 showMemoDetails(selected);  // 詳細表示専用メソッドに切り出し
             } else {
                 System.out.println("その番号のメモはありません。");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("数字を入力してください！");
+        }
+    }
+
+    /**
+     * タグ一覧を表示し、選択されたタグに該当するメモを表示
+     */
+    private void showMemosBySelectedTag() {
+        // タグ一覧を取得
+        List<String> tagList = new java.util.ArrayList<>(manager.getAllTags());
+        if (tagList.isEmpty()) {
+            System.out.println("タグが登録されていません。");
+            return;
+        }
+
+        // タグ一覧を表示
+        System.out.println("\n=== タグ一覧 ===");
+        for (int i = 0; i < tagList.size(); i++) {
+            System.out.println((i + 1) + ". " + tagList.get(i));
+        }
+
+        // 入力受付
+        System.out.print("メモを見たいタグの番号を入力（Enterでキャンセル）: ");
+        String input = scanner.nextLine().trim();
+        if (input.isEmpty()) {
+            System.out.println("キャンセルしました。");
+            return;
+        }
+
+        try {
+            int index = Integer.parseInt(input) - 1;
+            if (index >= 0 && index < tagList.size()) {
+                String selectedTag = tagList.get(index);
+                List<Memo> matchedMemos = manager.searchByTag(selectedTag);
+                if (matchedMemos.isEmpty()) {
+                    System.out.println("このタグに該当するメモはありません。");
+                } else {
+                    ViewDetails(matchedMemos);  // 既存の詳細表示機能を利用
+                }
+            } else {
+                System.out.println("無効な番号です。");
             }
         } catch (NumberFormatException e) {
             System.out.println("数字を入力してください！");
