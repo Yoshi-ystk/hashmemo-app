@@ -36,6 +36,11 @@ public class MemoManager {
         return false;
     }
 
+    //指定したメモを削除
+    public boolean delete(Memo memo) {
+        return memos.remove(memo);
+    }
+
     // キーワードで本文またはタイトルを検索
     public List<Memo> search(String keyword) {
         List<Memo> results = new ArrayList<>();

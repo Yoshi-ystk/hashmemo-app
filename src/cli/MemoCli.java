@@ -203,5 +203,67 @@ public class MemoCli {
         System.out.println("[タイトル] " + memo.getTitle());
         System.out.println("[タグ] " + String.join(", ", memo.getTags()));
         System.out.println("[本文] " + memo.getBody());
+
+        //終了、メモ編集、削除を選択
+        System.out.println("終了は1、メモの編集は2、メモの削除は3を入力：");
+        try {
+            int choice = Integer.parseInt(scanner.nextLine());
+
+            switch (choice) {
+                case 1 -> {return;}
+                case 2 -> editMemo(memo);
+                case 3 -> {
+                    manager.delete(memo);
+                    System.out.println("メモを削除しました");
+                }
+                default -> System.out.println("無効な選択です。もう一度お試しください。");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("数字を入力してください！");
+        }
+    }
+
+    /**
+     * メモの編集
+     */
+    public void editMemo(Memo memo){
+        System.out.println("\n編集オプション: ");
+        System.out.println("[1] タイトルを編集");
+        System.out.println("[2] 本文を編集");
+        System.out.println("[3] タグを編集");
+        System.out.print("選択（Enterで戻る）: ");
+        String choice = scanner.nextLine().trim();
+
+    switch (choice) {
+        case "1" -> {
+            System.out.print("新しいタイトル: ");
+            String newTitle = scanner.nextLine().trim();
+            memo.setTitle(newTitle); 
+            System.out.println("タイトルを更新しました。");
+        }
+        case "2" -> {
+            System.out.println("新しい本文を入力（`:end`で終了）:");
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while (!(line = scanner.nextLine()).equals(":end")) {
+                sb.append(line).append(System.lineSeparator());
+            }
+            memo.setBody(sb.toString().trim());
+            System.out.println("本文を更新しました。");
+        }
+        case "3" -> {
+            System.out.print("新しいタグをカンマ区切りで入力: ");
+            String tagInput = scanner.nextLine();
+            List<String> tags = Arrays.stream(tagInput.split(","))
+                .map(String::trim)
+                .map(t -> t.replaceFirst("^#", ""))
+                .filter(t -> !t.isEmpty())
+                .collect(Collectors.toList());
+            memo.setTags(tags);
+            System.out.println("タグを更新しました。");
+        }
+        case "" -> System.out.println("編集をスキップしました。");
+        default -> System.out.println("無効な選択です。");
+        }
     }
 }

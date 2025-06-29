@@ -33,6 +33,18 @@ public class Memo {
         return body;
     }
 
+    public void setTitle(String title) {
+        this.title = title; 
+    }
+    
+    public void setBody(String body) { 
+        this.body = body; 
+    }
+    
+    public void setTags(List<String> tags) {
+        this.tags = tags; 
+    }
+
     @Override
     public String toString() {
         return "[タイトル] " + title + "\n[タグ] " + tags + "\n[本文] " + body;
