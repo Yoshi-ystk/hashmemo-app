@@ -11,7 +11,7 @@ public class MemoRepository {
     // ファイルの場所は src/storage/memos.db
     private static final String DB_URL = "jdbc:sqlite:src/storage/memos.db";
 
-    /**
+    /**     
      * データベースに接続するメソッド
      * 接続が成功すると Connection オブジェクトを返す
      * 失敗した場合は null を返す
