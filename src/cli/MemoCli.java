@@ -52,7 +52,7 @@ public class MemoCli {
             // 選択肢に応じて処理を振り分ける
             switch (choice) {
                 case 1 -> addMemo(); // メモの追加
-                case 2 -> ViewDetails(manager.getAll());   //ViewDetails();  メモ一覧の表示
+                case 2 -> viewDetails(manager.getAll()); // メモ一覧の表示示
                 case 3 -> deleteMemo(); // メモの削除
                 case 4 -> searchMemo(); // メモの検索
                 case 5 -> searchByTag(); // タグで検索
@@ -82,10 +82,10 @@ public class MemoCli {
         System.out.print("タグをカンマ区切りで入力してください（例: 仕事,勉強）: ");
         String tagInput = scanner.nextLine();
         List<String> tags = Arrays.stream(tagInput.split(","))
-        .map(String::trim)
-        .map(tag -> tag.replaceFirst("^#", ""))  // ← # を除去
-        .filter(s -> !s.isEmpty())
-        .collect(Collectors.toList());
+                .map(String::trim)
+                .map(tag -> tag.replaceFirst("^#", "")) // ← # を除去
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
 
         // Memo インスタンスを作成し追加
         Memo memo = new Memo(title, body, tags);
@@ -94,46 +94,47 @@ public class MemoCli {
         System.out.println("メモを追加しました！");
     }
 
-    /**
-     * 保存されているすべてのメモのタイトルを一覧表示
-     */
-    private void displayMemos() {
-        List<Memo> memos = manager.getAll();
+    private void displayMemos(List<Memo> memos) {
         if (memos.isEmpty()) {
             System.out.println("メモはありません。");
         } else {
             System.out.println("\n=== メモ一覧 ===");
             for (int i = 0; i < memos.size(); i++) {
                 Memo memo = memos.get(i);
-                System.out.println((i + 1) + ". " + memo.getTitle()+ " [" + String.join(", ", memo.getTags()) + "]");
+                String dateLabel;
+                String dateValue;
+                if (memo.getUpdatedAt() != null && !memo.getUpdatedAt().equals(memo.getCreatedAt())) {
+                    dateLabel = "最終更新日";
+                    dateValue = memo.getUpdatedAt();
+                } else {
+                    dateLabel = "作成日";
+                    dateValue = memo.getCreatedAt();
+                }
+                System.out.println((i + 1) + ". " + memo.getTitle()
+                        + " [" + String.join(", ", memo.getTags()) + "]"
+                        + " - " + dateLabel + ": " + dateValue);
             }
         }
     }
-
-    private void displayMemos(List<Memo> memos) {
-    if (memos.isEmpty()) {
-        System.out.println("メモはありません。");
-    } else {
-        System.out.println("\n=== メモ一覧 ===");
-        for (int i = 0; i < memos.size(); i++) {
-            Memo memo = memos.get(i);
-            System.out.println((i + 1) + ". " + memos.get(i).getTitle()+ " [" + String.join(", ", memo.getTags()) + "]");
-            }
-        }
-    }
-
 
     /**
      * メモを一覧表示してから、削除したいメモの番号を指定
+     * Memo オブジェクトで削除を行う
      */
     private void deleteMemo() {
-        displayMemos();
-        if (!manager.getAll().isEmpty()) {
+        List<Memo> memos = manager.getAll();
+        displayMemos(memos);
+        if (!memos.isEmpty()) {
             System.out.print("削除するメモの番号を入力してください: ");
             try {
-                int index = Integer.parseInt(scanner.nextLine());
-                boolean success = manager.delete(index - 1);
-                System.out.println(success ? "メモを削除しました！" : "無効な番号です。");
+                int index = Integer.parseInt(scanner.nextLine()) - 1;
+                if (index >= 0 && index < memos.size()) {
+                    Memo memoToDelete = memos.get(index);
+                    boolean success = manager.delete(memoToDelete);
+                    System.out.println(success ? "メモを削除しました！" : "削除に失敗しました。");
+                } else {
+                    System.out.println("無効な番号です。");
+                }
             } catch (Exception e) {
                 System.out.println("無効な入力です。");
             }
@@ -141,7 +142,7 @@ public class MemoCli {
     }
 
     /**
-     * 指定されたキーワードに一致するタイトルまたは本文を持つメモを検索
+     * 指定されたキーワードに一致するタイトルまたは本文を持つメモを検索し、詳細表示へ進む
      */
     private void searchMemo() {
         System.out.print("検索キーワード: ");
@@ -150,12 +151,12 @@ public class MemoCli {
         if (results.isEmpty()) {
             System.out.println("一致するメモはありません。");
         } else {
-            ViewDetails(results);  // 検索結果をそのまま渡す
+            viewDetails(results); // 検索結果をそのまま渡す
         }
     }
 
     /**
-     * タグによる検索処理
+     * タグで検索し、該当するメモ一覧を表示 → 詳細表示に進む
      */
     private void searchByTag() {
         System.out.print("検索するタグを入力してください: ");
@@ -168,27 +169,28 @@ public class MemoCli {
             for (Memo memo : results) {
                 System.out.println("- " + memo.getTitle() + " [" + String.join(", ", memo.getTags()) + "]");
             }
-            ViewDetails(results);
+            viewDetails(results);
         }
     }
 
     /**
-     * メモ、タグ検索後の結果から、詳細表示するものを選択
+     * メモ・検索・タグ検索などから得られた一覧から、詳細表示するメモを選択
+     * 
+     * @param memos 表示対象のメモリスト
      */
-    private void ViewDetails(List<Memo> memos) {
-        displayMemos(memos);  // 引数ありに変更して汎用化
+    private void viewDetails(List<Memo> memos) {
+        displayMemos(memos); // メモ一覧を表示
         System.out.print("詳細を見たい番号を入力（Enterでキャンセル）: ");
         String input = scanner.nextLine().trim();
         if (input.isEmpty()) {
             System.out.println("キャンセルしました。");
             return;
         }
-
         try {
             int index = Integer.parseInt(input) - 1;
-            Memo selected = manager.getMemoByIndex(memos, index); // ← ここが責務分離
+            Memo selected = manager.getMemoByIndex(memos, index);
             if (selected != null) {
-                showMemoDetails(selected);  // 詳細表示専用メソッドに切り出し
+                showMemoDetails(selected); // 詳細表示
             } else {
                 System.out.println("その番号のメモはありません。");
             }
@@ -230,7 +232,7 @@ public class MemoCli {
                 if (matchedMemos.isEmpty()) {
                     System.out.println("このタグに該当するメモはありません。");
                 } else {
-                    ViewDetails(matchedMemos);  // 既存の詳細表示機能を利用
+                    viewDetails(matchedMemos); // 既存の詳細表示機能を利用
                 }
             } else {
                 System.out.println("無効な番号です。");
@@ -241,21 +243,37 @@ public class MemoCli {
     }
 
     /**
-     * メモの詳細を表示
+     * メモの詳細を表示し、編集・削除メニューに誘導
      */
     private void showMemoDetails(Memo memo) {
         System.out.println("\n--- メモ詳細 ---");
         System.out.println("[タイトル] " + memo.getTitle());
         System.out.println("[タグ] " + String.join(", ", memo.getTags()));
+
+        String dateLabel;
+        String dateValue;
+        if (memo.getUpdatedAt() != null && !memo.getUpdatedAt().equals(memo.getCreatedAt())) {
+            dateLabel = "最終更新日";
+            dateValue = memo.getUpdatedAt();
+        } else {
+            dateLabel = "作成日";
+            dateValue = memo.getCreatedAt();
+        }
+        System.out.println(dateLabel + ": " + dateValue);
         System.out.println("[本文] " + memo.getBody());
 
-        //終了、メモ編集、削除を選択
-        System.out.println("終了は1、メモの編集は2、メモの削除は3を入力：");
+        System.out.println("操作を選択してください：");
+        System.out.println("1. 閉じる");
+        System.out.println("2. メモを編集する");
+        System.out.println("3. メモを削除する");
+        System.out.print("番号で選択: ");
         try {
             int choice = Integer.parseInt(scanner.nextLine());
 
             switch (choice) {
-                case 1 -> {return;}
+                case 1 -> {
+                    return;
+                }
                 case 2 -> editMemo(memo);
                 case 3 -> {
                     manager.delete(memo);
@@ -271,7 +289,7 @@ public class MemoCli {
     /**
      * メモの編集
      */
-    public void editMemo(Memo memo){
+    public void editMemo(Memo memo) {
         System.out.println("\n編集オプション: ");
         System.out.println("[1] タイトルを編集");
         System.out.println("[2] 本文を編集");
@@ -279,36 +297,39 @@ public class MemoCli {
         System.out.print("選択（Enterで戻る）: ");
         String choice = scanner.nextLine().trim();
 
-    switch (choice) {
-        case "1" -> {
-            System.out.print("新しいタイトル: ");
-            String newTitle = scanner.nextLine().trim();
-            memo.setTitle(newTitle); 
-            System.out.println("タイトルを更新しました。");
-        }
-        case "2" -> {
-            System.out.println("新しい本文を入力（`:end`で終了）:");
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while (!(line = scanner.nextLine()).equals(":end")) {
-                sb.append(line).append(System.lineSeparator());
+        switch (choice) {
+            case "1" -> {
+                System.out.print("新しいタイトル: ");
+                String newTitle = scanner.nextLine().trim();
+                memo.setTitle(newTitle);
+                manager.update(memo); // DB反映
+                System.out.println("タイトルを更新しました。");
             }
-            memo.setBody(sb.toString().trim());
-            System.out.println("本文を更新しました。");
-        }
-        case "3" -> {
-            System.out.print("新しいタグをカンマ区切りで入力: ");
-            String tagInput = scanner.nextLine();
-            List<String> tags = Arrays.stream(tagInput.split(","))
-                .map(String::trim)
-                .map(t -> t.replaceFirst("^#", ""))
-                .filter(t -> !t.isEmpty())
-                .collect(Collectors.toList());
-            memo.setTags(tags);
-            System.out.println("タグを更新しました。");
-        }
-        case "" -> System.out.println("編集をスキップしました。");
-        default -> System.out.println("無効な選択です。");
+            case "2" -> {
+                System.out.println("新しい本文を入力（`:end`で終了）:");
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while (!(line = scanner.nextLine()).equals(":end")) {
+                    sb.append(line).append(System.lineSeparator());
+                }
+                memo.setBody(sb.toString().trim());
+                manager.update(memo); // DB反映
+                System.out.println("本文を更新しました。");
+            }
+            case "3" -> {
+                System.out.print("新しいタグをカンマ区切りで入力: ");
+                String tagInput = scanner.nextLine();
+                List<String> tags = Arrays.stream(tagInput.split(","))
+                        .map(String::trim)
+                        .map(t -> t.replaceFirst("^#", ""))
+                        .filter(t -> !t.isEmpty())
+                        .collect(Collectors.toList());
+                memo.setTags(tags);
+                manager.update(memo); // DB反映
+                System.out.println("タグを更新しました。");
+            }
+            case "" -> System.out.println("編集をスキップしました。");
+            default -> System.out.println("無効な選択です。");
         }
     }
 }

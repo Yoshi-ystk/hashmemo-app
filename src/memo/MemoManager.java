@@ -5,48 +5,51 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import storage.MemoRepository;
+
 /**
- * メモの追加・取得・検索・削除を管理するクラス
+ * メモの追加・取得・検索・削除を管理するクラス（データはSQLiteと連携）
  */
 public class MemoManager {
-    private final List<Memo> memos = new ArrayList<>();
+    private final MemoRepository repository = new MemoRepository();
 
-    // メモを追加
+    /**
+     * メモを追加してDBに保存
+     */
     public void add(Memo memo) {
-        memos.add(memo);
+        repository.save(memo);
     }
 
-    // 全メモを取得
+    /**
+     * 全メモをDBから取得
+     */
     public List<Memo> getAll() {
-        return new ArrayList<>(memos);
+        return repository.getAll();
     }
 
-    //検索されたメモ一覧を取得
+    /**
+     * 表示用の一覧などから選択されたインデックスに対応するメモを返す
+     */
     public Memo getMemoByIndex(List<Memo> list, int index) {
         if (index >= 0 && index < list.size()) {
             return list.get(index);
         }
-            return null;
-        }
-
-    // 指定インデックスのメモを削除
-    public boolean delete(int index) {
-        if (index >= 0 && index < memos.size()) {
-            memos.remove(index);
-            return true;
-        }
-        return false;
+        return null;
     }
 
-    //指定したメモを削除
+    /**
+     * 指定したメモをDBから削除
+     */
     public boolean delete(Memo memo) {
-        return memos.remove(memo);
+        return repository.delete(memo);
     }
 
-    // キーワードで本文またはタイトルを検索
+    /**
+     * タイトルまたは本文にキーワードが含まれるメモを検索（部分一致）
+     */
     public List<Memo> search(String keyword) {
         List<Memo> results = new ArrayList<>();
-        for (Memo memo : memos) {
+        for (Memo memo : repository.getAll()) {
             if (memo.getTitle().contains(keyword) || memo.getBody().contains(keyword)) {
                 results.add(memo);
             }
@@ -54,14 +57,15 @@ public class MemoManager {
         return results;
     }
 
-    // タグで検索
+    /**
+     * タグが部分一致するメモを検索
+     */
     public List<Memo> searchByTag(String tag) {
-        String normalizedTag = tag.replaceFirst("^#", "").trim(); // #を除去して正規化
-
+        String normalizedTag = tag.replaceFirst("^#", "").trim();
         List<Memo> results = new ArrayList<>();
-        for (Memo memo : memos) {
+        for (Memo memo : repository.getAll()) {
             for (String t : memo.getTags()) {
-                if (t.contains(normalizedTag)) { // 部分一致で判定
+                if (t.contains(normalizedTag)) {
                     results.add(memo);
                     break;
                 }
@@ -69,12 +73,22 @@ public class MemoManager {
         }
         return results;
     }
-    // タグの一覧
+
+    /**
+     * 全メモに含まれるタグを一覧として取得（重複排除・ソート済み）
+     */
     public Set<String> getAllTags() {
-    Set<String> allTags = new TreeSet<>();  // ソートして表示
-    for (Memo memo : memos) {
-        allTags.addAll(memo.getTags());
+        Set<String> allTags = new TreeSet<>();
+        for (Memo memo : repository.getAll()) {
+            allTags.addAll(memo.getTags());
+        }
+        return allTags;
     }
-    return allTags;
+
+    /**
+     * メモをDB上で更新
+     */
+    public void update(Memo memo) {
+        repository.update(memo);
     }
 }

@@ -5,25 +5,14 @@ import memo.MemoManager;
 
 public class MemoApp {
     public static void main(String[] args) {
-        MemoManager manager = new MemoManager();
-        MemoCli cli = new MemoCli(manager);
-        cli.run();  // CLIインターフェースの起動
+        try {
+            MemoManager manager = new MemoManager();
+            MemoCli cli = new MemoCli(manager);
+            System.out.println("HashMemo CLI アプリケーションを起動します...");
+            cli.run();
+        } catch (Exception e) {
+            System.err.println("アプリケーションの起動に失敗しました: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
-/*
-// 以下は接続テスト用です
-package app;
-
-import storage.MemoRepository;
-
-public class MemoApp {
-
-    public static void main(String[] args) {
-        // MemoRepositoryのインスタンスを作成
-        MemoRepository repo = new MemoRepository();
-
-        // 接続テスト
-        repo.connect();
-    }
-}
-*/

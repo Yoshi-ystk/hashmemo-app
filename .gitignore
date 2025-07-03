@@ -20,3 +20,7 @@ Thumbs.db
 *.bak
 .vscode/
 *.jar
+
+# SQLiteの一時ファイルとDB Browserの設定ファイル
+*.db-journal
+*.sqbpro
