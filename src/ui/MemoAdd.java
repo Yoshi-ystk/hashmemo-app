@@ -62,6 +62,7 @@ public class MemoAdd extends JDialog {
             }
         });
 
+        
         add(formPanel, BorderLayout.CENTER);
         add(submitButton, BorderLayout.SOUTH);
     }
