@@ -26,6 +26,7 @@ public class Memo {
         this.updatedAt = updatedAt;
     }
 
+    
     /**
      * 新規メモ作成時に使用するコンストラクタ（id, createdAt, updatedAt はDBで自動設定）
      */
