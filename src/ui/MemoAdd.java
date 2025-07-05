@@ -1,6 +1,5 @@
 package ui;
 
-import ui.MemoGui;
 import memo.MemoManager;
 import memo.Memo;
 
@@ -26,7 +25,9 @@ public class MemoAdd extends JDialog {
     private JTextField tagField;
     private JTextArea bodyArea;
     private JButton submitButton;
+    private MemoGui parent;
 	
+    //メモの追加用コンストラクタ
     public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> memoModel) {
         super(owner, "メモ追加", true);
         setSize(400, 300);
@@ -46,6 +47,7 @@ public class MemoAdd extends JDialog {
         formPanel.add(new JLabel("本文"));
         formPanel.add(new JScrollPane(bodyArea));
 
+        submitButton = new JButton();
         submitButton.setText("登録");
         submitButton.addActionListener(e -> {
             String title = titleField.getText().trim();
@@ -56,20 +58,27 @@ public class MemoAdd extends JDialog {
                 Memo memo = new Memo(title, body, tags);
                 manager.add(memo);
                 memoModel.addElement(memo);
-                dispose(); // 閉じる
+                dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "タイトルと本文を入力してください", "エラー", JOptionPane.ERROR_MESSAGE);
             }
         });
-
         
         add(formPanel, BorderLayout.CENTER);
         add(submitButton, BorderLayout.SOUTH);
     }
     
+    /**
+     * 既存のメモを編集するためのコンストラクタ
+     * @param owner 親フレーム
+     * @param manager メモ管理クラス
+     * @param model メモ一覧のモデル
+     * @param existingMemo 編集対象のメモ
+     */
     public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> model, Memo existingMemo) {
     	this(owner, manager, model);
-    	
+        this.parent = (MemoGui) owner; // 親のMemoGuiを取得
+
         setTitle("メモ編集");
         submitButton.setText("更新");
         titleField.setText(existingMemo.getTitle());
@@ -85,8 +94,9 @@ public class MemoAdd extends JDialog {
             existingMemo.setBody(bodyArea.getText().trim());
             existingMemo.setTags(Arrays.stream(tagField.getText().split(",")).map(String::trim).toList());
             model.removeElement(existingMemo); // リスト更新のため一度削除
-            model.addElement(existingMemo);  
+            model.addElement(existingMemo);
             dispose();
+            parent.showMemoDetails(existingMemo); 
         });
     }
 }
