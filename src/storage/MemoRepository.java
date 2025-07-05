@@ -2,13 +2,13 @@ package storage;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
 import memo.Memo;
 
@@ -19,8 +19,12 @@ import memo.Memo;
 public class MemoRepository {
 
     // SQLiteのデータベースURL
-    private static final String DB_URL = "jdbc:sqlite:src/storage/hashmemo.db";
-
+    // eclipsテスト用に一時的にコメントアウト
+	// private static final String DB_URL = "jdbc:sqlite:src/storage/hashmemo.db";
+	
+	// eclipseテスト用コード
+	private static final String DB_URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/storage/hashmemo.db";
+    
     /**
      * コンストラクタでJDBCドライバをロード
      */
