@@ -1,6 +1,5 @@
 package storage;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -35,13 +34,14 @@ public class MemoRepository {
 
     /**
      * メモをデータベースに保存する（INSERT）
+     * 
      * @param memo 保存対象のメモ
      */
     public void save(Memo memo) {
         String sql = "INSERT INTO memos (title, body, tags, created_at) VALUES (?, ?, ?, datetime('now', 'localtime'))";
 
         try (Connection conn = connect();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, memo.getTitle());
             pstmt.setString(2, memo.getBody());
@@ -50,19 +50,20 @@ public class MemoRepository {
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
-            System.out.println("メモの保存に失敗しました: " + e.getMessage());
+            throw new DataAccessException("メモの保存に失敗しました", e);
         }
     }
 
     /**
      * メモをデータベースで更新する（UPDATE）
+     * 
      * @param memo 更新対象のメモ（idが必須）
      */
     public void update(Memo memo) {
         String sql = "UPDATE memos SET title = ?, body = ?, tags = ?, updated_at = datetime('now', 'localtime') WHERE id = ?";
 
         try (Connection conn = connect();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, memo.getTitle());
             pstmt.setString(2, memo.getBody());
@@ -75,39 +76,36 @@ public class MemoRepository {
             }
 
         } catch (SQLException e) {
-            System.out.println("メモの更新に失敗しました: " + e.getMessage());
+            throw new DataAccessException("メモの更新に失敗しました", e);
         }
     }
 
     /**
      * SQLiteデータベースに接続する
+     * 
      * @return Connection オブジェクト
      * @throws SQLException 接続に失敗した場合
      */
     public Connection connect() throws SQLException {
-        String dbPath = DB_URL.replace("jdbc:sqlite:", "");
-        File dbFile = new File(dbPath);
-
-        System.out.println("=== SQLite 接続ログ ===");
-        System.out.println("作業ディレクトリ: " + System.getProperty("user.dir"));
-        System.out.println("接続先DBパス: " + dbPath);
-        System.out.println("DBファイル存在チェック: " + dbFile.exists());
-        System.out.println("DBファイルの絶対パス: " + dbFile.getAbsolutePath());
-
         return DriverManager.getConnection(DB_URL);
     }
 
     /**
-     * データベースから全メモを取得する（SELECT）
-     * @return メモのリスト（存在しない場合は空リスト）
+     * データベースからキーワードに一致するメモを取得する
+     * 
+     * @param keyword 検索キーワード
+     * @return メモのリスト
      */
-    public List<Memo> getAll() {
+    public List<Memo> findByKeyword(String keyword) {
         List<Memo> list = new ArrayList<>();
-        String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos";
+        String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos WHERE title LIKE ? OR body LIKE ?";
 
         try (Connection conn = connect();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery()) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, "%" + keyword + "%");
+            pstmt.setString(2, "%" + keyword + "%");
+            ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -127,7 +125,82 @@ public class MemoRepository {
             }
 
         } catch (SQLException e) {
-            System.out.println("メモ一覧の取得に失敗しました: " + e.getMessage());
+            throw new DataAccessException("キーワード検索に失敗しました", e);
+        }
+        return list;
+    }
+
+    /**
+     * データベースからタグに一致するメモを取得する
+     * 
+     * @param tag 検索タグ
+     * @return メモのリスト
+     */
+    public List<Memo> findByTag(String tag) {
+        List<Memo> list = new ArrayList<>();
+        String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos WHERE tags LIKE ?";
+
+        try (Connection conn = connect();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, "%" + tag + "%");
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String tagsStr = rs.getString("tags");
+                List<String> tags = Arrays.stream(tagsStr.split(","))
+                        .map(String::trim)
+                        .filter(t -> !t.isEmpty())
+                        .collect(Collectors.toList());
+
+                if (tags.contains(tag)) {
+                    int id = rs.getInt("id");
+                    String title = rs.getString("title");
+                    String body = rs.getString("body");
+                    String createdAt = rs.getString("created_at");
+                    String updatedAt = rs.getString("updated_at");
+                    Memo memo = new Memo(id, title, body, tags, createdAt, updatedAt);
+                    list.add(memo);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("タグでの検索に失敗しました", e);
+        }
+        return list;
+    }
+
+    /**
+     * データベースから全メモを取得する（SELECT）
+     * 
+     * @return メモのリスト（存在しない場合は空リスト）
+     */
+    public List<Memo> getAll() {
+        List<Memo> list = new ArrayList<>();
+        String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos";
+
+        try (Connection conn = connect();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String title = rs.getString("title");
+                String body = rs.getString("body");
+                String tagsStr = rs.getString("tags");
+                String createdAt = rs.getString("created_at");
+                String updatedAt = rs.getString("updated_at");
+
+                List<String> tags = Arrays.stream(tagsStr.split(","))
+                        .map(String::trim)
+                        .filter(t -> !t.isEmpty())
+                        .collect(Collectors.toList());
+
+                Memo memo = new Memo(id, title, body, tags, createdAt, updatedAt);
+                list.add(memo);
+            }
+
+        } catch (SQLException e) {
+            throw new DataAccessException("メモ一覧の取得に失敗しました", e);
         }
 
         return list;
@@ -135,21 +208,21 @@ public class MemoRepository {
 
     /**
      * 指定されたメモをデータベースから削除する（DELETE）
+     * 
      * @param memo 削除対象のメモ（idが必要）
      * @return 成功時は true、失敗時は false
      */
     public boolean delete(Memo memo) {
         String sql = "DELETE FROM memos WHERE id = ?";
         try (Connection conn = connect();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, memo.getId());
             int affected = pstmt.executeUpdate();
             return affected > 0;
 
         } catch (SQLException e) {
-            System.out.println("メモの削除に失敗しました: " + e.getMessage());
-            return false;
+            throw new DataAccessException("メモの削除に失敗しました", e);
         }
     }
 }
