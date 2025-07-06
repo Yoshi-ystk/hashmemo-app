@@ -1,5 +1,6 @@
 package storage;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -19,12 +20,8 @@ import memo.Memo;
 public class MemoRepository {
 
     // SQLiteのデータベースURL
-    // eclipsテスト用に一時的にコメントアウト
-	// private static final String DB_URL = "jdbc:sqlite:src/storage/hashmemo.db";
-	
-	// eclipseテスト用コード
-	private static final String DB_URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/storage/hashmemo.db";
-    
+    private static final String DB_URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/storage/hashmemo.db";
+
     /**
      * コンストラクタでJDBCドライバをロード
      */
@@ -43,8 +40,8 @@ public class MemoRepository {
     public void save(Memo memo) {
         String sql = "INSERT INTO memos (title, body, tags, created_at) VALUES (?, ?, ?, datetime('now', 'localtime'))";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, memo.getTitle());
             pstmt.setString(2, memo.getBody());
@@ -64,8 +61,8 @@ public class MemoRepository {
     public void update(Memo memo) {
         String sql = "UPDATE memos SET title = ?, body = ?, tags = ?, updated_at = datetime('now', 'localtime') WHERE id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, memo.getTitle());
             pstmt.setString(2, memo.getBody());
@@ -83,6 +80,24 @@ public class MemoRepository {
     }
 
     /**
+     * SQLiteデータベースに接続する
+     * @return Connection オブジェクト
+     * @throws SQLException 接続に失敗した場合
+     */
+    public Connection connect() throws SQLException {
+        String dbPath = DB_URL.replace("jdbc:sqlite:", "");
+        File dbFile = new File(dbPath);
+
+        System.out.println("=== SQLite 接続ログ ===");
+        System.out.println("作業ディレクトリ: " + System.getProperty("user.dir"));
+        System.out.println("接続先DBパス: " + dbPath);
+        System.out.println("DBファイル存在チェック: " + dbFile.exists());
+        System.out.println("DBファイルの絶対パス: " + dbFile.getAbsolutePath());
+
+        return DriverManager.getConnection(DB_URL);
+    }
+
+    /**
      * データベースから全メモを取得する（SELECT）
      * @return メモのリスト（存在しない場合は空リスト）
      */
@@ -90,9 +105,9 @@ public class MemoRepository {
         List<Memo> list = new ArrayList<>();
         String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
+        try (Connection conn = connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -125,8 +140,8 @@ public class MemoRepository {
      */
     public boolean delete(Memo memo) {
         String sql = "DELETE FROM memos WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, memo.getId());
             int affected = pstmt.executeUpdate();
