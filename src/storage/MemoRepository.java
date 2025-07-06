@@ -19,7 +19,7 @@ import memo.Memo;
 public class MemoRepository {
 
     // SQLiteのデータベースURL
-    private static final String DB_URL = "jdbc:sqlite:src/storage/hashmemo.db";
+    private static final String DB_URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/storage/hashmemo.db";
 
     /**
      * コンストラクタでJDBCドライバをロード
