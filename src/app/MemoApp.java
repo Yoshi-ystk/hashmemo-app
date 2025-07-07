@@ -5,6 +5,7 @@ import memo.MemoManager;
 import ui.MemoGui;
 
 import javax.swing.SwingUtilities;
+import storage.DataAccessException;
 
 public class MemoApp {
     public static void main(String[] args) {
@@ -22,7 +23,7 @@ public class MemoApp {
             cli.run();
             
         } catch (Exception e) {
-            System.err.println("アプリケーションの起動に失敗しました: " + e.getMessage());
+            System.err.println("予期せぬエラーが発生しました。アプリケーションを終了します: " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -1,6 +1,5 @@
 package memo;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -48,13 +47,7 @@ public class MemoManager {
      * タイトルまたは本文にキーワードが含まれるメモを検索（部分一致）
      */
     public List<Memo> search(String keyword) {
-        List<Memo> results = new ArrayList<>();
-        for (Memo memo : repository.getAll()) {
-            if (memo.getTitle().contains(keyword) || memo.getBody().contains(keyword)) {
-                results.add(memo);
-            }
-        }
-        return results;
+        return repository.findByKeyword(keyword);
     }
 
     /**
@@ -62,16 +55,7 @@ public class MemoManager {
      */
     public List<Memo> searchByTag(String tag) {
         String normalizedTag = tag.replaceFirst("^#", "").trim();
-        List<Memo> results = new ArrayList<>();
-        for (Memo memo : repository.getAll()) {
-            for (String t : memo.getTags()) {
-                if (t.contains(normalizedTag)) {
-                    results.add(memo);
-                    break;
-                }
-            }
-        }
-        return results;
+        return repository.findByTag(normalizedTag);
     }
 
     /**
