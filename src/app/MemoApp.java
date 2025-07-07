@@ -5,7 +5,6 @@ import memo.MemoManager;
 import ui.MemoGui;
 
 import javax.swing.SwingUtilities;
-import storage.DataAccessException;
 
 public class MemoApp {
     public static void main(String[] args) {
