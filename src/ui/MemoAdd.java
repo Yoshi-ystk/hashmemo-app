@@ -4,7 +4,6 @@ import memo.MemoManager;
 import memo.Memo;
 
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
 import java.util.Arrays;
 import java.util.List;
 

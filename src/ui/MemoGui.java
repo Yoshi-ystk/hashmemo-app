@@ -122,41 +122,15 @@ public class MemoGui extends JFrame {
         
         JPanel centerWrapper = new JPanel();
         centerWrapper.setLayout(new BorderLayout());
-        centerWrapper.add(topPanel, BorderLayout.NORTH); //  ボタン群
-        centerWrapper.add(memoPanel, BorderLayout.CENTER); // メモ一覧
+        centerWrapper.add(topPanel, BorderLayout.NORTH); 
+        centerWrapper.add(memoPanel, BorderLayout.CENTER); 
 
         add(logoLabel, BorderLayout.NORTH); 
-        add(centerWrapper, BorderLayout.CENTER); // 
+        add(centerWrapper, BorderLayout.CENTER); 
 
-
-        // フレームの背景色とコンポーネントの色設定
-        Color background = new Color(0, 0, 0);     // 黒っぽいグレー
-        /*Color foreground = new Color(220, 220, 220);  // 明るい文字色
-        getContentPane().setBackground(background); // フレームの背景
-
-        topPanel.setBackground(background);
-        topPanel.setForeground(foreground);
-        memoPanel.setBackground(background);
-        memoPanel.setForeground(foreground);
-        scroll.setBackground(background);
-        memoList.setBackground(background);
-        memoList.setForeground(foreground);
-
-        addMemoButton.setBackground(new Color(64,64,64));
-        addMemoButton.setForeground(foreground);
-
-        tagLabel.setForeground(new Color(220, 220, 220));
-        tagCombo.setBackground(new Color(50,50,50));
-        tagCombo.setForeground(foreground);
-
-        searchField.setBackground(background);
-        searchField.setForeground(foreground);
-        searchButton.setBackground(new Color(64,64,64));
-        searchButton.setForeground(foreground);
-
-        memoLabel.setForeground(new Color(220, 220, 220));*/
+        //背景色の設定
+        Color background = new Color(0, 0, 0);
         getContentPane().setBackground(background);
-
 
         /**
          * 各イベントの設定
