@@ -27,15 +27,14 @@ import java.awt.Dimension;
  * メモの追加・編集用ダイアログクラス。
  * メモのタイトル、タグ、本文を入力し、登録または更新を行う。
  */
-
 public class MemoAdd extends JDialog {
     private JTextField titleField;
     private JTextField tagField;
     private JTextArea bodyArea;
     private JButton submitButton;
     private MemoGui parent;
-	
-    //メモの追加用コンストラクタ
+
+    // メモの追加用コンストラクタ
     public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> memoModel) {
         super(owner, "メモ追加", true);
         setSize(400, 300);
@@ -74,7 +73,7 @@ public class MemoAdd extends JDialog {
             String title = titleField.getText().trim();
             String body = bodyArea.getText().trim();
             List<String> tags = Arrays.stream(tagField.getText().split(",")).map(String::trim).toList();
-                        
+
             if (!title.isEmpty() && !body.isEmpty()) {
                 Memo memo = new Memo(title, body, tags);
                 manager.add(memo);
@@ -84,7 +83,7 @@ public class MemoAdd extends JDialog {
                 JOptionPane.showMessageDialog(this, "タイトルと本文を入力してください", "エラー", JOptionPane.ERROR_MESSAGE);
             }
         });
-        
+
         add(formPanel, BorderLayout.CENTER);
         add(submitButton, BorderLayout.SOUTH);
     }
@@ -93,7 +92,7 @@ public class MemoAdd extends JDialog {
      * 既存のメモを編集するためのコンストラクタ
      */
     public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> model, Memo existingMemo) {
-    	this(owner, manager, model);
+        this(owner, manager, model);
         this.parent = (MemoGui) owner;
 
         // 既存のメモ情報を入力フィールドに設定
@@ -102,13 +101,13 @@ public class MemoAdd extends JDialog {
         titleField.setText(existingMemo.getTitle());
         tagField.setText(String.join(", ", existingMemo.getTags()));
         bodyArea.setText(existingMemo.getBody());
-        bodyArea.setBorder(BorderFactory.createLineBorder(new Color(160,160,160)));
-        bodyArea.setBackground(new Color(250,250,250));
-        
+        bodyArea.setBorder(BorderFactory.createLineBorder(new Color(160, 160, 160)));
+        bodyArea.setBackground(new Color(250, 250, 250));
+
         for (ActionListener al : submitButton.getActionListeners()) {
             submitButton.removeActionListener(al);
         }
-        
+
         // 更新ボタンのアクションリスナーを設定
         submitButton.addActionListener(e -> {
             existingMemo.setTitle(titleField.getText().trim());
@@ -118,9 +117,8 @@ public class MemoAdd extends JDialog {
             model.addElement(existingMemo);
             manager.update(existingMemo);
             dispose();
-            parent.showMemoDetails(existingMemo); 
-            parent.refreshTagComboBox(); 
+            parent.showMemoDetails(existingMemo);
+            parent.refreshTagComboBox();
         });
     }
 }
-
