@@ -3,19 +3,50 @@ package memo;
 import java.util.List;
 
 /**
- * 1件のメモ情報を保持するクラス。
- * データベースの「memos」テーブル1行に相当。
+ * 1件のメモ情報を保持するデータクラス（POJO）です。
+ * このクラスは、データベースの`memos`テーブルの1レコードに対応します。
+ * メモのID、タイトル、本文、タグ、作成日時、更新日時を管理します。
  */
 public class Memo {
-    private int id; // データベースの主キー（自動採番）
-    private String title; // メモのタイトル
-    private String body; // メモの本文
-    private List<String> tags; // メモに付けられたタグ（カンマ区切り）
-    private String createdAt; // 作成日時（DB側で自動設定）
-    private String updatedAt; // 最終更新日時（編集時に更新）
+    /**
+     * データベースで自動採番される一意のID。
+     */
+    private int id;
 
     /**
-     * データベースから取得したときに使用するコンストラクタ
+     * メモのタイトル。
+     */
+    private String title;
+
+    /**
+     * メモの本文。
+     */
+    private String body;
+
+    /**
+     * メモに関連付けられたタグのリスト。
+     */
+    private List<String> tags;
+
+    /**
+     * メモの作成日時。データベースによって自動的に設定されます。
+     */
+    private String createdAt;
+
+    /**
+     * メモの最終更新日時。メモが更新されるたびに更新されます。
+     */
+    private String updatedAt;
+
+    /**
+     * データベースから取得したデータを使ってMemoオブジェクトを生成するコンストラクタです。
+     *
+     * @param id        メモのID
+     * @param title     メモのタイトル
+     * @param body      メモの本文
+     * @param tags      関連付けられたタグのリスト
+     * @param createdAt 作成日時
+     * @param updatedAt 最終更新日時
      */
     public Memo(int id, String title, String body, List<String> tags, String createdAt, String updatedAt) {
         this.id = id;
@@ -28,7 +59,12 @@ public class Memo {
 
     
     /**
-     * 新規メモ作成時に使用するコンストラクタ（id, createdAt, updatedAt はDBで自動設定）
+     * 新しいメモをアプリケーションで作成する際に使用するコンストラクタです。
+     * ID、作成日時、更新日時はデータベース側で設定されるため、ここでは初期化しません。
+     *
+     * @param title メモのタイトル
+     * @param body  メモの本文
+     * @param tags  関連付けられたタグのリスト
      */
     public Memo(String title, String body, List<String> tags) {
         this.title = title;
@@ -36,10 +72,18 @@ public class Memo {
         this.tags = tags;
     }
 
+    // 以下、各フィールドのゲッターおよびセッター
+
     public List<String> getTags() {
         return tags;
     }
 
+    /**
+     * このメモが指定されたタグを持っているかどうかを判定します。
+     *
+     * @param keyword 確認したいタグ文字列
+     * @return タグが存在すればtrue、そうでなければfalse
+     */
     public boolean hasTag(String keyword) {
         return tags.contains(keyword);
     }
@@ -77,7 +121,9 @@ public class Memo {
     }
 
     /**
-     * メモの概要を文字列で表示（デバッグ・ログ用）
+     * メモの主要な情報を文字列として返します。デバッグやログ出力に利用できます。
+     *
+     * @return メモのタイトル、タグ、本文、作成・更新日時を含む文字列
      */
     @Override
     public String toString() {
