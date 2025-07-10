@@ -2,20 +2,44 @@ package app;
 
 import cli.MemoCli;
 import memo.MemoManager;
+import ui.MemoGui;
+
+import javax.swing.SwingUtilities;
 
 /**
- * アプリケーションのエントリーポイント。
- * MemoManagerとMemoCliを連携させてCLIメモアプリを起動する。
+ * メモアプリケーションのエントリーポイント（開始点）となるクラスです。
+ * この`main`メソッドから、GUIモードとCLIモードの両方を初期化し、起動します。
  */
 public class MemoApp {
+    /**
+     * アプリケーションのメインメソッドです。
+     *
+     * @param args コマンドライン引数（このアプリケーションでは使用しません）。
+     */
     public static void main(String[] args) {
-        // メモの保存・検索・削除などを管理するオブジェクト
-        MemoManager manager = new MemoManager();
+        try {
+            // アプリケーション全体で共有するビジネスロジック層のインスタンスを生成します。
+            MemoManager manager = new MemoManager();
 
-        // CLI操作を担当するオブジェクトにMemoManagerを注入
-        MemoCli cli = new MemoCli(manager);
-
-        // CLIインターフェースの起動（ユーザー入力待ち）
-        cli.run();
+            // --- GUIの起動 ---
+            // Swingのコンポーネントはイベントディスパッチスレッド（EDT）で操作する必要があるため、
+            // `SwingUtilities.invokeLater` を使用してGUIの生成と表示をスケジュールします。
+            SwingUtilities.invokeLater(() -> {
+                MemoGui gui = new MemoGui(manager);
+                gui.setVisible(true);
+            });
+            System.out.println("HashMemo GUI アプリケーションを起動します...");
+            
+            // --- CLIの起動 ---
+            // GUIとは独立して、コマンドラインインターフェースも起動します。
+            MemoCli cli = new MemoCli(manager);
+            System.out.println("HashMemo CLI アプリケーションを起動します...");
+            cli.run(); // CLIのメインループを開始します。
+            
+        } catch (Exception e) {
+            // アプリケーションの初期化中または実行中に予期せぬエラーが発生した場合
+            System.err.println("予期せぬエラーが発生しました。アプリケーションを終了します: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

@@ -1,22 +1,28 @@
-# Java: クラスファイル
+# Java: コンパイル済みクラスファイル
 *.class
 
-# Eclipse / VSCode
+# Eclipse / VSCode 設定ディレクトリ
 .vscode/
 .classpath
 .project
 .settings/
 
-# ビルド出力
+# ビルド出力ディレクトリ
 /bin/
 /build/
+/out/
 
 # OS・エディタごとの不要ファイル
 .DS_Store
 Thumbs.db
 
-# ログやバックアップ
+# ログやバックアップファイル
 *.log
 *.bak
-.vscode/
+
+# ライブラリ（JAR）ファイル
 *.jar
+
+# SQLite 一時ファイル・設定ファイル
+*.db-journal
+*.sqbpro
