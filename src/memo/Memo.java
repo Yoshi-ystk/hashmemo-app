@@ -7,9 +7,6 @@ import java.util.List;
  * 1件のメモ情報を保持するデータクラス（POJO）です。
  * このクラスは、データベースの`memos`テーブルの1レコードに対応します。
  * メモのID、タイトル、本文、タグ、作成日時、更新日時を管理します。
- *
- * @apiNote 日時情報は現在String型で保持していますが、将来的には`java.time.LocalDateTime`など
- *          専用の型にすることで、より堅牢な設計になります。
  */
 public class Memo {
     /**
@@ -62,7 +59,7 @@ public class Memo {
     }
 
     /**
-     * 新しいメモをアプリケーションで作成する際に使用するコンストラクタです。
+     * 新しいメモをアプリケーションで作成する際に使用するコンストラクタ。
      * ID、作成日時、更新日時はデータベース側で設定されるため、ここでは初期化しません。
      *
      * @param title メモのタイトル
@@ -97,6 +94,7 @@ public class Memo {
 
     /**
      * メモのタイトルを返します。
+     *
      * @return メモのタイトル。
      */
     public String getTitle() {
@@ -105,6 +103,7 @@ public class Memo {
 
     /**
      * メモのタイトルを設定します。
+     *
      * @param title 新しいタイトル。
      */
     public void setTitle(String title) {
@@ -113,6 +112,7 @@ public class Memo {
 
     /**
      * メモの本文を返します。
+     *
      * @return メモの本文。
      */
     public String getBody() {
@@ -121,6 +121,7 @@ public class Memo {
 
     /**
      * メモの本文を設定します。
+     *
      * @param body 新しい本文。
      */
     public void setBody(String body) {
@@ -129,6 +130,7 @@ public class Memo {
 
     /**
      * メモの一意なIDを返します。
+     *
      * @return メモのID。
      */
     public int getId() {
@@ -137,6 +139,7 @@ public class Memo {
 
     /**
      * メモの作成日時を文字列として返します。
+     *
      * @return 作成日時。取得できない場合は"(未設定)"を返します。
      */
     public String getCreatedAt() {
@@ -145,6 +148,7 @@ public class Memo {
 
     /**
      * メモの最終更新日時を文字列として返します。
+     *
      * @return 最終更新日時。取得できない場合は"(未設定)"を返します。
      */
     public String getUpdatedAt() {

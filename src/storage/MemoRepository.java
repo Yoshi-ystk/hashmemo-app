@@ -31,8 +31,7 @@ public class MemoRepository {
     }
 
     /**
-     * データベースファイルとテーブルが存在しない場合に、それらを初期化します。
-     * `CREATE TABLE IF NOT EXISTS` を使用するため、何度呼び出されても安全です。
+     * データベースファイルとテーブルが存在しない場合に、それらを初期化。
      */
     private void initializeDatabase() {
         // `memos` テーブルが存在しない場合に作成するSQL
