@@ -1,6 +1,5 @@
 package app;
 
-import cli.MemoCli;
 import memo.MemoManager;
 import ui.MemoGui;
 
@@ -29,13 +28,7 @@ public class MemoApp {
                 gui.setVisible(true);
             });
             System.out.println("HashMemo GUI アプリケーションを起動します...");
-            
-            // --- CLIの起動 ---
-            // GUIとは独立して、コマンドラインインターフェースも起動します。
-            MemoCli cli = new MemoCli(manager);
-            System.out.println("HashMemo CLI アプリケーションを起動します...");
-            cli.run(); // CLIのメインループを開始します。
-            
+            // CLI起動部分はmainブランチでは省略（デバッグ用途のみ）
         } catch (Exception e) {
             // アプリケーションの初期化中または実行中に予期せぬエラーが発生した場合
             System.err.println("予期せぬエラーが発生しました。アプリケーションを終了します: " + e.getMessage());
