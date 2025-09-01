@@ -96,14 +96,49 @@ public class MemoGui extends JFrame {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
+                // src/assets に移動したので、パスを修正
                 ImageIcon icon = new ImageIcon("assets/hashmemo_logo.png");
+
+                if (icon.getIconWidth() == -1) {
+                    // 画像が見つからない場合のエラー表示
+                    g.setColor(Color.RED);
+                    g.drawString("Image not found: assets/hashmemo_logo.png", 10, 20);
+                    return;
+                }
+
                 Image img = icon.getImage();
-                // パネルと画像のサイズから描画サイズを計算
-                // ... (アスペクト比を維持するロジック)
-                g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+                int panelWidth = getWidth();
+                int panelHeight = getHeight();
+                int imgWidth = img.getWidth(this);
+                int imgHeight = img.getHeight(this);
+
+                // アスペクト比を維持した描画サイズと位置を計算
+                double panelRatio = (double) panelWidth / panelHeight;
+                double imgRatio = (double) imgWidth / imgHeight;
+
+                int drawWidth;
+                int drawHeight;
+                int x;
+                int y;
+
+                if (panelRatio > imgRatio) {
+                    drawHeight = panelHeight;
+                    drawWidth = (int) (imgWidth * ((double) panelHeight / imgHeight));
+                } else {
+                    drawWidth = panelWidth;
+                    drawHeight = (int) (imgHeight * ((double) panelWidth / imgWidth));
+                }
+
+                x = (panelWidth - drawWidth) / 2;
+                y = (panelHeight - drawHeight) / 2;
+
+                // 計算したサイズと位置で画像を描画
+                g.drawImage(img, x, y, drawWidth, drawHeight, this);
             }
         };
         logoLabel.setPreferredSize(new Dimension(200, 80));
+        logoLabel.setBackground(Color.BLACK);
+        logoLabel.setOpaque(true);
         return logoLabel;
     }
 
