@@ -26,7 +26,7 @@
 
 ---
 
-## 補足（v0.2 現在）
+## 補足（v1.0.0 現在）
 
 - 永続化方式は JSON 形式から SQLite に完全移行済み
 - DB ファイルは `src/storage/hashmemo.db` に保存され、CLI / GUI 共通で利用されます
