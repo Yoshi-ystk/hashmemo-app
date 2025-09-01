@@ -17,6 +17,8 @@ import java.util.Set;
  * `JFrame`を継承し、メモの一覧表示、検索、追加、詳細表示などの機能を提供します。
  */
 public class MemoGui extends JFrame {
+    // 検索フィールドをインスタンス変数として保持
+    private JTextField searchField;
     // ビジネスロジックとデータアクセスを担当するマネージャー
     private MemoManager manager;
     // メモ一覧を表示するためのリストモデル
@@ -54,6 +56,7 @@ public class MemoGui extends JFrame {
 
         // --- トップパネル（操作ボタン、検索フィールド） ---
         JPanel topPanel = createTopPanel();
+        // createTopPanelでsearchFieldを初期化
 
         // --- メインエリア（メモ一覧） ---
         JList<Memo> memoList = createMemoList();
@@ -80,7 +83,8 @@ public class MemoGui extends JFrame {
         getContentPane().setBackground(new Color(240, 240, 240));
 
         // --- イベントリスナーの設定 ---
-        setupEventListeners(memoList, (JTextField) topPanel.getComponent(2), (JButton) topPanel.getComponent(3), (JButton) topPanel.getComponent(4));
+        setupEventListeners(memoList, (JTextField) topPanel.getComponent(2), (JButton) topPanel.getComponent(3),
+                (JButton) topPanel.getComponent(4));
     }
 
     /**
@@ -92,7 +96,7 @@ public class MemoGui extends JFrame {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                ImageIcon icon = new ImageIcon("assets/hashmemo_logo_upscaled.png");
+                ImageIcon icon = new ImageIcon("assets/hashmemo_logo.png");
                 Image img = icon.getImage();
                 // パネルと画像のサイズから描画サイズを計算
                 // ... (アスペクト比を維持するロジック)
@@ -111,7 +115,7 @@ public class MemoGui extends JFrame {
         tagCombo = new JComboBox<>();
         refreshTagComboBox();
 
-        JTextField searchField = new JTextField(20);
+        searchField = new JTextField(20);
         JButton searchButton = new JButton("検索");
         JButton addMemoButton = new JButton("メモ追加");
 
@@ -150,12 +154,27 @@ public class MemoGui extends JFrame {
     /**
      * UIコンポーネントのイベントリスナーをまとめて設定します。
      */
-    private void setupEventListeners(JList<Memo> memoList, JTextField searchField, JButton searchButton, JButton addMemoButton) {
+    private void setupEventListeners(JList<Memo> memoList, JTextField searchField, JButton searchButton,
+            JButton addMemoButton) {
         // 「メモ追加」ボタン
         addMemoButton.addActionListener(e -> {
             MemoAdd addDialog = new MemoAdd(this, manager, model);
             addDialog.setVisible(true);
-            refreshTagComboBox(); // メモ追加後にタグリストを更新
+            // メモ追加後は全件リストを再表示し、検索条件をリセット
+
+            // --- tagComboのリスナーを一時的に外す ---
+            ActionListener[] tagListeners = tagCombo.getActionListeners();
+            for (ActionListener l : tagListeners)
+                tagCombo.removeActionListener(l);
+
+            searchField.setText("");
+            tagCombo.setSelectedIndex(0); // "すべて表示"を選択
+            filterMemos("", "すべて表示", true); // ポップアップ抑制
+            refreshTagComboBox(); // タグリストも更新
+
+            // --- リスナーを戻す ---
+            for (ActionListener l : tagListeners)
+                tagCombo.addActionListener(l);
         });
 
         // 「タグ」コンボボックス
@@ -182,6 +201,13 @@ public class MemoGui extends JFrame {
      * キーワードとタグに基づいてメモ一覧をフィルタリングします。
      */
     private void filterMemos(String keyword, String selectedTag) {
+        filterMemos(keyword, selectedTag, false);
+    }
+
+    /**
+     * フィルタ時にポップアップ表示を抑制するオプション付き
+     */
+    private void filterMemos(String keyword, String selectedTag, boolean suppressPopup) {
         String normalizedKeyword = keyword.trim().toLowerCase();
         model.clear();
 
@@ -197,10 +223,12 @@ public class MemoGui extends JFrame {
                     return matchKeyword && matchTag;
                 })
                 .toList();
-        
+
         filtered.forEach(model::addElement);
 
-        if (filtered.isEmpty()) {
+        // 検索条件が指定されている場合のみポップアップを表示
+        boolean isSearching = !(keyword.trim().isEmpty() && ("すべて表示".equals(selectedTag) || selectedTag == null));
+        if (!suppressPopup && filtered.isEmpty() && isSearching) {
             JOptionPane.showMessageDialog(this, "一致するメモが見つかりません", "検索結果", JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -309,12 +337,23 @@ public class MemoGui extends JFrame {
             int confirm = JOptionPane.showConfirmDialog(this, "このメモを削除しますか？", "確認", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 manager.delete(memo);
-                model.removeElement(memo);
+                // --- tagComboのリスナーを一時的に外す ---
+                ActionListener[] tagListeners = tagCombo.getActionListeners();
+                for (ActionListener l : tagListeners)
+                    tagCombo.removeActionListener(l);
+                // --- 値リセット ---
+                tagCombo.setSelectedIndex(0); // "すべて表示"を選択
+                if (searchField != null)
+                    searchField.setText("");
+                // --- リスナーを戻す ---
+                for (ActionListener l : tagListeners)
+                    tagCombo.addActionListener(l);
+                // --- 検索リスト再表示 ---
+                filterMemos("", "すべて表示", true); // ポップアップ抑制
                 refreshTagComboBox();
                 dialog.dispose();
             }
         });
-
         // 「閉じる」ボタン
         doneButton.addActionListener(e -> dialog.dispose());
 
@@ -323,6 +362,7 @@ public class MemoGui extends JFrame {
         buttonPanel.add(doneButton);
         return buttonPanel;
     }
+
 }
 
 /**
@@ -331,7 +371,8 @@ public class MemoGui extends JFrame {
  */
 class MemoListCellRenderer extends DefaultListCellRenderer {
     @Override
-    public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+    public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+            boolean cellHasFocus) {
         JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         Memo memo = (Memo) value;
 
@@ -340,7 +381,8 @@ class MemoListCellRenderer extends DefaultListCellRenderer {
                 : "作成日: " + memo.getCreatedAt();
 
         // HTMLを使ってテキストをフォーマット
-        label.setText("<html><b>" + memo.getTitle() + " </b><br><span style='color:gray'> " + String.join(", ", memo.getTags())
+        label.setText("<html><b>" + memo.getTitle() + " </b><br><span style='color:gray'> "
+                + String.join(", ", memo.getTags())
                 + "  " + dateLabel + "</span></html>");
 
         label.setBorder(new EmptyBorder(12, 10, 20, 8));

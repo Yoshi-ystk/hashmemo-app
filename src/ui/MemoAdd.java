@@ -34,8 +34,7 @@ public class MemoAdd extends JDialog {
     private JTextArea bodyArea; // 本文入力用
     private JButton submitButton; // 送信（登録・更新）ボタン
 
-    // 親ウィンドウ（MemoGui）への参照
-    private MemoGui parent;
+    
 
     /**
      * 新しいメモを追加するためのコンストラクタです。
@@ -110,7 +109,7 @@ public class MemoAdd extends JDialog {
     public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> model, Memo existingMemo) {
         // まず追加用コンストラクタを呼び出してUIの基本設定を行う
         this(owner, manager, model);
-        this.parent = (MemoGui) owner;
+        
 
         // --- 編集モード用の設定 ---
         setTitle("メモ編集");
@@ -135,16 +134,9 @@ public class MemoAdd extends JDialog {
             existingMemo.setBody(bodyArea.getText().trim());
             existingMemo.setTags(Arrays.stream(tagField.getText().split(",")).map(String::trim).toList());
 
-            // GUIのリストモデルから一度削除して、再度追加することで表示を更新
-            model.removeElement(existingMemo);
-            model.addElement(existingMemo);
-
             manager.update(existingMemo); // マネージャー経由でデータベースを更新
             dispose(); // ダイアログを閉じる
-
-            // 親ウィンドウの表示を更新
-            parent.showMemoDetails(existingMemo); // 詳細表示を更新
-            parent.refreshTagComboBox(); // タグのコンボボックスを更新
+            // 編集後のリスト・詳細表示もMemoGui側で一元管理するため、ここでは何もしない
         });
     }
 }
