@@ -20,7 +20,7 @@ import memo.Memo;
 public class MemoRepository {
 
     // SQLiteデータベースへの接続URL。プロジェクトルートからの相対パスで指定します。
-    private static final String DB_URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/storage/hashmemo.db";
+    private static final String DB_URL = "jdbc:sqlite:storage/hashmemo.db";
 
     /**
      * MemoRepositoryのコンストラクタです。
