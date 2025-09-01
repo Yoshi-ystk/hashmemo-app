@@ -34,8 +34,6 @@ public class MemoAdd extends JDialog {
     private JTextArea bodyArea; // 本文入力用
     private JButton submitButton; // 送信（登録・更新）ボタン
 
-    
-
     /**
      * 新しいメモを追加するためのコンストラクタです。
      *
@@ -109,7 +107,6 @@ public class MemoAdd extends JDialog {
     public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> model, Memo existingMemo) {
         // まず追加用コンストラクタを呼び出してUIの基本設定を行う
         this(owner, manager, model);
-        
 
         // --- 編集モード用の設定 ---
         setTitle("メモ編集");
