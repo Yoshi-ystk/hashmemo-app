@@ -3,17 +3,29 @@ package memo;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import storage.MemoRepository;
 
 /**
  * アプリケーションのビジネスロジックを担当するクラスです。
- * UI（CLIやGUI）とデータ永続化層（MemoRepository）の間に位置し、
+ * UI（GUI）とデータ永続化層（MemoRepository）の間に位置し、
  * メモの追加、検索、更新、削除などの操作を調整します。
+ * このクラスは特定のUI技術やデータ保存技術に依存しません。
  */
 public class MemoManager {
-    // データアクセスを担当するリポジトリのインスタンス
-    private final MemoRepository repository = new MemoRepository();
+
+    private final MemoRepository repository;
+
+    /**
+     * MemoManagerのコンストラクタです。
+     * 依存性の注入（DI）パターンに基づき、データアクセスを担当するリポジトリを受け取ります。
+     *
+     * @param repository MemoRepositoryの実装インスタンス。
+     */
+    public MemoManager(MemoRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * 新しいメモを受け取り、リポジトリを介してデータベースに保存します。
@@ -31,21 +43,6 @@ public class MemoManager {
      */
     public List<Memo> getAll() {
         return repository.getAll();
-    }
-
-    /**
-     * メモのリストとインデックスを受け取り、指定された位置のメモを返します。
-     * UIでユーザーが選択した項目を特定するのに役立ちます。
-     *
-     * @param list  メモのリスト。
-     * @param index 取得したいメモのインデックス（0から始まる）。
-     * @return 指定されたインデックスのMemoオブジェクト。インデックスが無効な場合はnull。
-     */
-    public Memo getMemoByIndex(List<Memo> list, int index) {
-        if (index >= 0 && index < list.size()) {
-            return list.get(index);
-        }
-        return null;
     }
 
     /**
@@ -77,24 +74,25 @@ public class MemoManager {
      * @return 検索条件に一致したMemoオブジェクトのリスト。
      */
     public List<Memo> searchByTag(String tag) {
-        // タグの先頭にある`#`や前後の空白を削除して、正規化する
         String normalizedTag = tag.replaceFirst("^#", "").trim();
         return repository.findByTag(normalizedTag);
     }
 
     /**
      * データベース内のすべてのメモから、ユニークなタグの一覧を取得します。
-     * 結果はソートされた状態で返されます。
+     * 結果はアルファベット順にソートされた状態で返されます。
+     *
+     * @apiNote 現在の実装では、すべてのメモをメモリにロードしてからタグを収集しています。
+     *          メモの量が膨大になった場合、パフォーマンスに影響を与える可能性があります。
+     *          将来的には、リポジトリ層にタグのみを取得する専用のクエリを実装することが望ましいです。
      *
      * @return すべてのユニークなタグを含むSet。
      */
     public Set<String> getAllTags() {
-        // TreeSetを使うことで、自動的にソートされ、重複も排除される
-        Set<String> allTags = new TreeSet<>();
-        for (Memo memo : repository.getAll()) {
-            allTags.addAll(memo.getTags());
-        }
-        return allTags;
+        return repository.getAll().stream()
+                .flatMap(memo -> memo.getTags().stream())
+                .filter(tag -> tag != null && !tag.isEmpty())
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     /**
@@ -104,5 +102,33 @@ public class MemoManager {
      */
     public void update(Memo memo) {
         repository.update(memo);
+    }
+
+    /**
+     * キーワードとタグに基づいてメモ一覧をフィルタリングします。
+     * UI層からビジネスロジックを分離するために、このメソッドで絞り込み処理を一元管理します。
+     *
+     * @param keyword     検索キーワード。空の場合はキーワードでの絞り込みは行いません。
+     * @param selectedTag 選択されたタグ。「すべて表示」が選択されている場合はタグでの絞り込みは行いません。
+     * @return フィルタリングされたMemoオブジェクトのリスト。
+     */
+    public List<Memo> filterMemos(String keyword, String selectedTag) {
+        String normalizedKeyword = keyword.trim().toLowerCase();
+        boolean isTagFiltered = selectedTag != null && !"すべて表示".equals(selectedTag);
+
+        return getAll().stream()
+                .filter(memo -> {
+                    // キーワードに一致するかどうか
+                    boolean matchKeyword = normalizedKeyword.isEmpty() ||
+                            memo.getTitle().toLowerCase().contains(normalizedKeyword) ||
+                            memo.getBody().toLowerCase().contains(normalizedKeyword);
+
+                    // 選択されたタグに一致するかどうか
+                    boolean matchTag = !isTagFiltered ||
+                            memo.getTags().stream().anyMatch(t -> t.equalsIgnoreCase(selectedTag));
+
+                    return matchKeyword && matchTag;
+                })
+                .collect(Collectors.toList());
     }
 }

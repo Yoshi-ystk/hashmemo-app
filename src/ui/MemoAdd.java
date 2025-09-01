@@ -1,15 +1,12 @@
 package ui;
 
-import memo.MemoManager;
-import memo.Memo;
-
 import java.awt.BorderLayout;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -19,81 +16,91 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import java.awt.event.ActionListener;
-import java.awt.Color;
-import java.awt.Dimension;
+
+import memo.Memo;
+import memo.MemoManager;
 
 /**
  * メモの追加および編集を行うためのダイアログクラスです。
  * 新規作成と既存メモの更新の両方の機能を持ち、コンストラクタによって動作が切り替わります。
+ * このダイアログの責務は、ユーザー入力を受け取り、ビジネスロジック層に渡すことのみです。
+ * UIのリスト更新は、呼び出し元のクラスが担当します。
  */
 public class MemoAdd extends JDialog {
-    // UIコンポーネント
-    private JTextField titleField; // タイトル入力用
-    private JTextField tagField; // タグ入力用
-    private JTextArea bodyArea; // 本文入力用
-    private JButton submitButton; // 送信（登録・更新）ボタン
+
+    private static final long serialVersionUID = 1L;
+
+    private final JTextField titleField;
+    private final JTextField tagField;
+    private final JTextArea bodyArea;
+    private final JButton submitButton;
+    private final MemoManager manager;
 
     /**
-     * 新しいメモを追加するためのコンストラクタです。
+     * UIコンポーネントの初期化など、コンストラクタで共通の処理を行います。
      *
-     * @param owner     親となるJFrame（MemoGui）。
-     * @param manager   ビジネスロジックを担当するMemoManager。
-     * @param memoModel メモリストを管理するListModel。
+     * @param owner   親となるJFrame（MemoGui）。
+     * @param manager ビジネスロジックを担当するMemoManager。
+     * @param title   ダイアログのタイトル。
      */
-    public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> memoModel) {
-        super(owner, "メモ追加", true); // モーダルダイアログとして設定
+    private MemoAdd(JFrame owner, MemoManager manager, String title) {
+        super(owner, title, true);
+        this.manager = manager;
+
+        // --- UI Components Initialization ---
+        titleField = new JTextField();
+        tagField = new JTextField();
+        bodyArea = new JTextArea();
+        bodyArea.setLineWrap(true);
+        submitButton = new JButton();
+
+        // --- Layout Setup ---
         setSize(400, 300);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
 
-        // UIコンポーネントの初期化
-        titleField = new JTextField();
-        tagField = new JTextField();
-        bodyArea = new JTextArea();
-        bodyArea.setLineWrap(true); // 自動折り返しを有効に
-
-        // 本文エリアをスクロール可能にする
         JScrollPane bodyScroll = new JScrollPane(bodyArea);
-        bodyScroll.setPreferredSize(new Dimension(400, 200));
+        bodyScroll.setPreferredSize(new java.awt.Dimension(400, 200));
 
-        // 本文エリアのラッパーパネル（ラベルとスクロールペインをまとめる）
         JPanel bodyWrapper = new JPanel(new BorderLayout());
         bodyWrapper.add(new JLabel("本文"), BorderLayout.NORTH);
         bodyWrapper.add(bodyScroll, BorderLayout.CENTER);
 
-        // 入力フォーム全体のパネル
         JPanel formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.add(new JLabel("タイトル"));
         formPanel.add(titleField);
         formPanel.add(new JLabel("タグ（カンマ区切り）"));
         formPanel.add(tagField);
-        formPanel.add(bodyWrapper); // 本文エリアのラッパーを追加
+        formPanel.add(bodyWrapper);
 
-        // 送信ボタンの初期化と設定
-        submitButton = new JButton("登録");
+        add(formPanel, BorderLayout.CENTER);
+        add(submitButton, BorderLayout.SOUTH);
+    }
 
-        // 「登録」ボタンのクリックイベント
+    /**
+     * 新しいメモを追加するためのコンストラクタです。
+     *
+     * @param owner   親となるJFrame（MemoGui）。
+     * @param manager ビジネスロジックを担当するMemoManager。
+     */
+    public MemoAdd(JFrame owner, MemoManager manager) {
+        this(owner, manager, "メモ追加");
+        submitButton.setText("登録");
+
         submitButton.addActionListener(e -> {
             String title = titleField.getText().trim();
             String body = bodyArea.getText().trim();
-            List<String> tags = Arrays.stream(tagField.getText().split(",")).map(String::trim).toList();
 
-            // タイトルと本文が入力されているかチェック
-            if (!title.isEmpty() && !body.isEmpty()) {
-                Memo memo = new Memo(title, body, tags);
-                manager.add(memo); // マネージャー経由でメモを保存
-                memoModel.addElement(memo); // GUIのリストモデルにも追加
-                dispose(); // ダイアログを閉じる
-            } else {
+            if (title.isEmpty() || body.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "タイトルと本文を入力してください", "エラー", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+            List<String> tags = parseTags(tagField.getText());
+            Memo memo = new Memo(title, body, tags);
+            manager.add(memo);
+            dispose();
         });
-
-        // パネルをダイアログに追加
-        add(formPanel, BorderLayout.CENTER);
-        add(submitButton, BorderLayout.SOUTH);
     }
 
     /**
@@ -101,39 +108,45 @@ public class MemoAdd extends JDialog {
      *
      * @param owner        親となるJFrame（MemoGui）。
      * @param manager      ビジネスロジックを担当するMemoManager。
-     * @param model        メモリストを管理するListModel。
      * @param existingMemo 編集対象のMemoオブジェクト。
      */
-    public MemoAdd(JFrame owner, MemoManager manager, DefaultListModel<Memo> model, Memo existingMemo) {
-        // まず追加用コンストラクタを呼び出してUIの基本設定を行う
-        this(owner, manager, model);
-
-        // --- 編集モード用の設定 ---
-        setTitle("メモ編集");
+    public MemoAdd(JFrame owner, MemoManager manager, Memo existingMemo) {
+        this(owner, manager, "メモ編集");
         submitButton.setText("更新");
 
-        // 既存のメモ情報をUIコンポーネントに設定
         titleField.setText(existingMemo.getTitle());
         tagField.setText(String.join(", ", existingMemo.getTags()));
         bodyArea.setText(existingMemo.getBody());
-        bodyArea.setBorder(BorderFactory.createLineBorder(new Color(160, 160, 160)));
-        bodyArea.setBackground(new Color(250, 250, 250));
 
-        // 追加用コンストラクタで設定されたActionListenerを一旦すべて削除
-        for (ActionListener al : submitButton.getActionListeners()) {
-            submitButton.removeActionListener(al);
-        }
-
-        // 「更新」ボタンのクリックイベントを新たに設定
         submitButton.addActionListener(e -> {
-            // UIから最新の情報を取得してexistingMemoオブジェクトを更新
-            existingMemo.setTitle(titleField.getText().trim());
-            existingMemo.setBody(bodyArea.getText().trim());
-            existingMemo.setTags(Arrays.stream(tagField.getText().split(",")).map(String::trim).toList());
+            String title = titleField.getText().trim();
+            String body = bodyArea.getText().trim();
 
-            manager.update(existingMemo); // マネージャー経由でデータベースを更新
-            dispose(); // ダイアログを閉じる
-            // 編集後のリスト・詳細表示もMemoGui側で一元管理するため、ここでは何もしない
+            if (title.isEmpty() || body.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "タイトルと本文を入力してください", "エラー", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            existingMemo.setTitle(title);
+            existingMemo.setBody(body);
+            existingMemo.setTags(parseTags(tagField.getText()));
+
+            manager.update(existingMemo);
+            dispose();
         });
+    }
+
+    /**
+     * カンマ区切りのタグ文字列を文字列のリストに変換します。
+     * @param rawTags タグ入力フィールドのテキスト
+     * @return 空白や空要素が除去されたタグのリスト
+     */
+    private List<String> parseTags(String rawTags) {
+        if (rawTags == null || rawTags.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(rawTags.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .collect(Collectors.toList());
     }
 }

@@ -1,11 +1,15 @@
 package memo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 1件のメモ情報を保持するデータクラス（POJO）です。
  * このクラスは、データベースの`memos`テーブルの1レコードに対応します。
  * メモのID、タイトル、本文、タグ、作成日時、更新日時を管理します。
+ *
+ * @apiNote 日時情報は現在String型で保持していますが、将来的には`java.time.LocalDateTime`など
+ *          専用の型にすることで、より堅牢な設計になります。
  */
 public class Memo {
     /**
@@ -52,7 +56,7 @@ public class Memo {
         this.id = id;
         this.title = title;
         this.body = body;
-        this.tags = tags;
+        this.tags = new ArrayList<>(tags); // 防御的コピー
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -68,55 +72,83 @@ public class Memo {
     public Memo(String title, String body, List<String> tags) {
         this.title = title;
         this.body = body;
-        this.tags = tags;
-    }
-
-    // 以下、各フィールドのゲッターおよびセッター
-
-    public List<String> getTags() {
-        return tags;
+        this.tags = new ArrayList<>(tags); // 防御的コピー
     }
 
     /**
-     * このメモが指定されたタグを持っているかどうかを判定します。
+     * このメモに関連付けられたタグのリストを返します。
+     * 外部からの変更を防ぐため、リストの防御的コピーを返します。
      *
-     * @param keyword 確認したいタグ文字列
-     * @return タグが存在すればtrue、そうでなければfalse
+     * @return タグのリスト。
      */
-    public boolean hasTag(String keyword) {
-        return tags.contains(keyword);
+    public List<String> getTags() {
+        return new ArrayList<>(tags); // 防御的コピー
     }
 
+    /**
+     * このメモに新しいタグのリストを設定します。
+     * 外部の変更から影響を受けないよう、受け取ったリストの防御的コピーを格納します。
+     *
+     * @param tags 新しく設定するタグのリスト。
+     */
+    public void setTags(List<String> tags) {
+        this.tags = new ArrayList<>(tags); // 防御的コピー
+    }
+
+    /**
+     * メモのタイトルを返します。
+     * @return メモのタイトル。
+     */
     public String getTitle() {
         return title;
     }
 
-    public String getBody() {
-        return body;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getCreatedAt() {
-        return createdAt != null ? createdAt : "(未設定)";
-    }
-
-    public String getUpdatedAt() {
-        return updatedAt != null ? updatedAt : "(未設定)";
-    }
-
+    /**
+     * メモのタイトルを設定します。
+     * @param title 新しいタイトル。
+     */
     public void setTitle(String title) {
         this.title = title;
     }
 
+    /**
+     * メモの本文を返します。
+     * @return メモの本文。
+     */
+    public String getBody() {
+        return body;
+    }
+
+    /**
+     * メモの本文を設定します。
+     * @param body 新しい本文。
+     */
     public void setBody(String body) {
         this.body = body;
     }
 
-    public void setTags(List<String> tags) {
-        this.tags = tags;
+    /**
+     * メモの一意なIDを返します。
+     * @return メモのID。
+     */
+    public int getId() {
+        return id;
+    }
+
+    /**
+     * メモの作成日時を文字列として返します。
+     * @return 作成日時。取得できない場合は"(未設定)"を返します。
+     */
+    public String getCreatedAt() {
+        return createdAt != null ? createdAt : "(未設定)";
+    }
+
+    /**
+     * メモの最終更新日時を文字列として返します。
+     * @return 最終更新日時。取得できない場合は"(未設定)"を返します。
+     */
+    public String getUpdatedAt() {
+        return updatedAt != null ? updatedAt : "(未設定)";
     }
 
     /**
@@ -126,7 +158,7 @@ public class Memo {
      */
     @Override
     public String toString() {
-        return "[タイトル] " + title + "\n[タグ] " + tags + "\n[本文] " + body +
+        return "[タイトル] " + title + "\n[タグ] " + String.join(", ", tags) + "\n[本文] " + body +
                 "\n[作成日時] " + getCreatedAt() + "\n[更新日時] " + getUpdatedAt();
     }
 }

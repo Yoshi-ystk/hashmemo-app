@@ -1,224 +1,162 @@
 package ui;
 
-import memo.Memo;
-import memo.MemoManager;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
+
+import memo.Memo;
+import memo.MemoManager;
+
 /**
  * アプリケーションのメインGUIウィンドウです。
  * `JFrame`を継承し、メモの一覧表示、検索、追加、詳細表示などの機能を提供します。
+ * UIの構築とイベント処理を担当します。
  */
 public class MemoGui extends JFrame {
-    // 検索フィールドをインスタンス変数として保持
+
+    // --- UI Components ---
+    private final DefaultListModel<Memo> memoListModel = new DefaultListModel<>();
+    private JList<Memo> memoList;
     private JTextField searchField;
-    // ビジネスロジックとデータアクセスを担当するマネージャー
-    private MemoManager manager;
-    // メモ一覧を表示するためのリストモデル
-    private DefaultListModel<Memo> model = new DefaultListModel<>();
-    // タグ検索用のコンボボックス
     private JComboBox<String> tagCombo;
+    private JButton searchButton;
+    private JButton addMemoButton;
+
+    // --- Business Logic Layer ---
+    private final MemoManager manager;
 
     /**
      * MemoGuiのコンストラクタです。
-     * UIの初期化とセットアップを行います。
+     * 依存性の注入により受け取ったMemoManagerを使い、UIの初期化とセットアップを行います。
      *
-     * @param manager MemoManagerのインスタンス。
+     * @param manager ビジネスロジックを担当するMemoManagerのインスタンス。
      */
     public MemoGui(MemoManager manager) {
         this.manager = manager;
 
-        // --- JFrameの基本設定 ---
-        setTitle("hashmemo");
-        setSize(600, 500);
-        setLocationRelativeTo(null); // 画面中央に表示
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        initStyle();
+        initComponents();
+        initLayout();
+        initListeners();
+    }
 
-        // --- UI全体のフォント設定 ---
+    /**
+     * アプリケーション全体の外観（フォントなど）を設定します。
+     */
+    private void initStyle() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.err.println("ルックアンドフィールの設定に失敗しました: " + e.getMessage());
+        }
         Font customFont = new Font("Yu Gothic UI", Font.PLAIN, 12);
         UIManager.put("Label.font", customFont);
         UIManager.put("Button.font", customFont);
         UIManager.put("ComboBox.font", customFont);
         UIManager.put("TextField.font", customFont);
         UIManager.put("List.font", customFont);
-        // ... 他のUIコンポーネントにもフォントを適用
-
-        // --- ヘッダー部分（ロゴ） ---
-        JLabel logoLabel = createLogoLabel();
-
-        // --- トップパネル（操作ボタン、検索フィールド） ---
-        JPanel topPanel = createTopPanel();
-        // createTopPanelでsearchFieldを初期化
-
-        // --- メインエリア（メモ一覧） ---
-        JList<Memo> memoList = createMemoList();
-        JScrollPane scroll = new JScrollPane(memoList);
-        scroll.setPreferredSize(new Dimension(500, 0));
-
-        // メモ一覧を囲むパネル
-        JPanel memoPanel = new JPanel(new BorderLayout());
-        JLabel memoLabel = new JLabel("メモ一覧");
-        setupLabelStyle(memoLabel);
-        memoPanel.add(memoLabel, BorderLayout.NORTH);
-        memoPanel.add(scroll, BorderLayout.CENTER);
-
-        // --- 中央部分のレイアウト ---
-        JPanel centerWrapper = new JPanel(new BorderLayout());
-        centerWrapper.add(topPanel, BorderLayout.NORTH);
-        centerWrapper.add(memoPanel, BorderLayout.CENTER);
-
-        // --- 全体をフレームに追加 ---
-        add(logoLabel, BorderLayout.NORTH);
-        add(centerWrapper, BorderLayout.CENTER);
-
-        // 背景色設定
-        getContentPane().setBackground(new Color(240, 240, 240));
-
-        // --- イベントリスナーの設定 ---
-        setupEventListeners(memoList, (JTextField) topPanel.getComponent(2), (JButton) topPanel.getComponent(3),
-                (JButton) topPanel.getComponent(4));
     }
 
     /**
-     * ヘッダーに表示するロゴのJLabelを生成します。
-     * 画像はパネルサイズに合わせてアスペクト比を維持して描画されます。
+     * このフレームで使われるUIコンポーネントを初期化します。
      */
-    private JLabel createLogoLabel() {
-        JLabel logoLabel = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                // src/assets に移動したので、パスを修正
-                ImageIcon icon = new ImageIcon("assets/hashmemo_logo.png");
-
-                if (icon.getIconWidth() == -1) {
-                    // 画像が見つからない場合のエラー表示
-                    g.setColor(Color.RED);
-                    g.drawString("Image not found: assets/hashmemo_logo.png", 10, 20);
-                    return;
-                }
-
-                Image img = icon.getImage();
-                int panelWidth = getWidth();
-                int panelHeight = getHeight();
-                int imgWidth = img.getWidth(this);
-                int imgHeight = img.getHeight(this);
-
-                // アスペクト比を維持した描画サイズと位置を計算
-                double panelRatio = (double) panelWidth / panelHeight;
-                double imgRatio = (double) imgWidth / imgHeight;
-
-                int drawWidth;
-                int drawHeight;
-                int x;
-                int y;
-
-                if (panelRatio > imgRatio) {
-                    drawHeight = panelHeight;
-                    drawWidth = (int) (imgWidth * ((double) panelHeight / imgHeight));
-                } else {
-                    drawWidth = panelWidth;
-                    drawHeight = (int) (imgHeight * ((double) panelWidth / imgWidth));
-                }
-
-                x = (panelWidth - drawWidth) / 2;
-                y = (panelHeight - drawHeight) / 2;
-
-                // 計算したサイズと位置で画像を描画
-                g.drawImage(img, x, y, drawWidth, drawHeight, this);
-            }
-        };
-        logoLabel.setPreferredSize(new Dimension(200, 80));
-        logoLabel.setBackground(Color.BLACK);
-        logoLabel.setOpaque(true);
-        return logoLabel;
-    }
-
-    /**
-     * ウィンドウ上部の操作パネル（タグ選択、検索、追加ボタン）を生成します。
-     */
-    private JPanel createTopPanel() {
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+    private void initComponents() {
+        // --- Top Panel Components ---
         tagCombo = new JComboBox<>();
-        refreshTagComboBox();
-
         searchField = new JTextField(20);
-        JButton searchButton = new JButton("検索");
-        JButton addMemoButton = new JButton("メモ追加");
+        searchButton = new JButton("検索");
+        addMemoButton = new JButton("メモ追加");
 
+        // --- Memo List ---
+        memoList = new JList<>(memoListModel);
+        memoList.setCellRenderer(new MemoListCellRenderer());
+        memoList.setFixedCellHeight(60);
+        memoList.setSelectionBackground(new Color(100, 100, 100));
+        memoList.setSelectionForeground(Color.WHITE);
+
+        // --- Initial Data Loading ---
+        refreshMemoList(null, "すべて表示"); // 初回は全件表示
+        refreshTagComboBox();
+    }
+
+    /**
+     * UIコンポーネントをフレームに配置します。
+     */
+    private void initLayout() {
+        setTitle("hashmemo");
+        setSize(600, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // --- Logo ---
+        add(createLogoLabel(), BorderLayout.NORTH);
+
+        // --- Top Panel (Controls) ---
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         topPanel.add(new JLabel("タグ:"));
         topPanel.add(tagCombo);
         topPanel.add(searchField);
         topPanel.add(searchButton);
         topPanel.add(addMemoButton);
-        return topPanel;
+
+        // --- Memo List Panel ---
+        JScrollPane scrollPane = new JScrollPane(memoList);
+        scrollPane.setPreferredSize(new Dimension(500, 0));
+        JPanel memoPanel = new JPanel(new BorderLayout());
+        JLabel memoLabel = new JLabel("メモ一覧");
+        setupLabelStyle(memoLabel);
+        memoPanel.add(memoLabel, BorderLayout.NORTH);
+        memoPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // --- Center Wrapper ---
+        JPanel centerWrapper = new JPanel(new BorderLayout());
+        centerWrapper.add(topPanel, BorderLayout.NORTH);
+        centerWrapper.add(memoPanel, BorderLayout.CENTER);
+        add(centerWrapper, BorderLayout.CENTER);
+
+        getContentPane().setBackground(new Color(240, 240, 240));
     }
 
     /**
-     * メモ一覧を表示するJListを生成・設定します。
+     * すべてのイベントリスナーを設定します。
      */
-    private JList<Memo> createMemoList() {
-        manager.getAll().forEach(model::addElement);
-        JList<Memo> memoList = new JList<>(model);
-        memoList.setFixedCellHeight(60);
-        memoList.setSelectionBackground(new Color(100, 100, 100));
-        memoList.setSelectionForeground(Color.WHITE);
-        // 各セルの表示方法をカスタマイズ
-        memoList.setCellRenderer(new MemoListCellRenderer());
-        return memoList;
-    }
+    private void initListeners() {
+        addMemoButton.addActionListener(e -> openAddMemoDialog());
+        searchButton.addActionListener(e -> searchMemos());
+        tagCombo.addActionListener(e -> searchMemos());
 
-    /**
-     * ラベルのスタイルを設定するヘルパーメソッドです。
-     */
-    private void setupLabelStyle(JLabel label) {
-        label.setFont(new Font("Yu Gothic UI", Font.BOLD, 16));
-        label.setForeground(new Color(90, 90, 90));
-        label.setBorder(new EmptyBorder(10, 0, 10, 0));
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-    }
-
-    /**
-     * UIコンポーネントのイベントリスナーをまとめて設定します。
-     */
-    private void setupEventListeners(JList<Memo> memoList, JTextField searchField, JButton searchButton,
-            JButton addMemoButton) {
-        // 「メモ追加」ボタン
-        addMemoButton.addActionListener(e -> {
-            MemoAdd addDialog = new MemoAdd(this, manager, model);
-            addDialog.setVisible(true);
-            // メモ追加後は全件リストを再表示し、検索条件をリセット
-
-            // --- tagComboのリスナーを一時的に外す ---
-            ActionListener[] tagListeners = tagCombo.getActionListeners();
-            for (ActionListener l : tagListeners)
-                tagCombo.removeActionListener(l);
-
-            searchField.setText("");
-            tagCombo.setSelectedIndex(0); // "すべて表示"を選択
-            filterMemos("", "すべて表示", true); // ポップアップ抑制
-            refreshTagComboBox(); // タグリストも更新
-
-            // --- リスナーを戻す ---
-            for (ActionListener l : tagListeners)
-                tagCombo.addActionListener(l);
-        });
-
-        // 「タグ」コンボボックス
-        tagCombo.addActionListener(e -> filterMemos(searchField.getText(), (String) tagCombo.getSelectedItem()));
-
-        // 「検索」ボタン
-        searchButton.addActionListener(e -> filterMemos(searchField.getText(), (String) tagCombo.getSelectedItem()));
-
-        // メモリストのダブルクリックで詳細表示
         memoList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -232,40 +170,67 @@ public class MemoGui extends JFrame {
         });
     }
 
+    // --- Event Handler Methods ---
+
     /**
-     * キーワードとタグに基づいてメモ一覧をフィルタリングします。
+     * 「メモ追加」ボタンが押されたときの処理。
+     * メモ追加ダイアログを開き、ダイアログが閉じられた後にリストを更新します。
      */
-    private void filterMemos(String keyword, String selectedTag) {
-        filterMemos(keyword, selectedTag, false);
+    private void openAddMemoDialog() {
+        MemoAdd addDialog = new MemoAdd(this, manager);
+        addDialog.setVisible(true); // モーダルなので、ここで処理がブロックされる
+
+        // ダイアログが閉じた後に実行される
+        resetSearchAndRefresh();
     }
 
     /**
-     * フィルタ時にポップアップ表示を抑制するオプション付き
+     * 「検索」ボタンまたはタグコンボボックスが操作されたときの処理。
      */
-    private void filterMemos(String keyword, String selectedTag, boolean suppressPopup) {
-        String normalizedKeyword = keyword.trim().toLowerCase();
-        model.clear();
+    private void searchMemos() {
+        String keyword = searchField.getText();
+        String selectedTag = (String) tagCombo.getSelectedItem();
+        List<Memo> filteredMemos = manager.filterMemos(keyword, selectedTag);
+        refreshMemoList(filteredMemos, null);
 
-        List<Memo> filtered = manager.getAll().stream()
-                .filter(memo -> {
-                    // キーワードに一致するかどうか
-                    boolean matchKeyword = normalizedKeyword.isEmpty() ||
-                            memo.getTitle().toLowerCase().contains(normalizedKeyword) ||
-                            memo.getBody().toLowerCase().contains(normalizedKeyword);
-                    // 選択されたタグに一致するかどうか
-                    boolean matchTag = "すべて表示".equals(selectedTag) ||
-                            memo.getTags().stream().anyMatch(t -> t.equalsIgnoreCase(selectedTag));
-                    return matchKeyword && matchTag;
-                })
-                .toList();
-
-        filtered.forEach(model::addElement);
-
-        // 検索条件が指定されている場合のみポップアップを表示
-        boolean isSearching = !(keyword.trim().isEmpty() && ("すべて表示".equals(selectedTag) || selectedTag == null));
-        if (!suppressPopup && filtered.isEmpty() && isSearching) {
+        // 検索結果が0件だった場合にポップアップを表示
+        boolean isSearching = !keyword.trim().isEmpty() || (selectedTag != null && !"すべて表示".equals(selectedTag));
+        if (filteredMemos.isEmpty() && isSearching) {
             JOptionPane.showMessageDialog(this, "一致するメモが見つかりません", "検索結果", JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+
+    /**
+     * 検索条件をリセットし、メモリストとタグリストを最新の状態に更新します。
+     * メモの追加・削除・更新後に呼び出されます。
+     */
+    private void resetSearchAndRefresh() {
+        ActionListener[] tagListeners = tagCombo.getActionListeners();
+        for (ActionListener l : tagListeners) {
+            tagCombo.removeActionListener(l);
+        }
+
+        searchField.setText("");
+        refreshTagComboBox(); // 内部で `setSelectedIndex(0)` が呼ばれる可能性があるため、先に更新
+        tagCombo.setSelectedIndex(0);
+        refreshMemoList(null, "すべて表示");
+
+        for (ActionListener l : tagListeners) {
+            tagCombo.addActionListener(l);
+        }
+    }
+
+    // --- UI Update Methods ---
+
+    /**
+     * メモリストの表示を更新します。
+     * @param memos 表示するメモのリスト。nullの場合は全件取得し直します。
+     * @param selectedTag タグでの絞り込み条件。memosがnullの場合のみ使用します。
+     */
+    private void refreshMemoList(List<Memo> memos, String selectedTag) {
+        memoListModel.clear();
+        List<Memo> memosToDisplay = (memos != null) ? memos : manager.filterMemos("", selectedTag);
+        memosToDisplay.forEach(memoListModel::addElement);
     }
 
     /**
@@ -277,10 +242,10 @@ public class MemoGui extends JFrame {
         tagList.add(0, "すべて表示");
 
         tagCombo.removeAllItems();
-        for (String tag : tagList) {
-            tagCombo.addItem(tag);
-        }
+        tagList.forEach(tagCombo::addItem);
     }
+
+    // --- Dialogs and Sub-windows ---
 
     /**
      * 選択されたメモの詳細情報を表示するダイアログを開きます。
@@ -293,17 +258,11 @@ public class MemoGui extends JFrame {
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
-        // --- 情報パネル（タイトル、タグ、日付） ---
         JPanel infoPanel = createDetailsInfoPanel(memo);
-
-        // --- 本文表示エリア ---
         JTextArea detailsArea = createDetailsTextArea(memo);
         JScrollPane scrollPane = new JScrollPane(detailsArea);
-
-        // --- ボタンパネル（編集、削除、閉じる） ---
         JPanel buttonPanel = createDetailsButtonPanel(dialog, memo);
 
-        // --- パネルをダイアログに追加 ---
         dialog.add(infoPanel, BorderLayout.NORTH);
         dialog.add(scrollPane, BorderLayout.CENTER);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
@@ -311,9 +270,52 @@ public class MemoGui extends JFrame {
         dialog.setVisible(true);
     }
 
-    /**
-     * 詳細表示ダイアログの情報パネルを生成します。
-     */
+    // --- UI Helper Methods ---
+
+    private JLabel createLogoLabel() {
+        JLabel logoLabel = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                ImageIcon icon = new ImageIcon("assets/hashmemo_logo.png");
+
+                if (icon.getIconWidth() == -1) {
+                    g.setColor(Color.RED);
+                    g.drawString("Image not found: assets/hashmemo_logo.png", 10, 20);
+                    return;
+                }
+
+                Image img = icon.getImage();
+                int panelWidth = getWidth();
+                int panelHeight = getHeight();
+                int imgWidth = img.getWidth(this);
+                int imgHeight = img.getHeight(this);
+
+                double panelRatio = (double) panelWidth / panelHeight;
+                double imgRatio = (double) imgWidth / imgHeight;
+
+                int drawWidth, drawHeight, x, y;
+
+                if (panelRatio > imgRatio) {
+                    drawHeight = panelHeight;
+                    drawWidth = (int) (imgWidth * ((double) panelHeight / imgHeight));
+                } else {
+                    drawWidth = panelWidth;
+                    drawHeight = (int) (imgHeight * ((double) panelWidth / imgWidth));
+                }
+
+                x = (panelWidth - drawWidth) / 2;
+                y = (panelHeight - drawHeight) / 2;
+
+                g.drawImage(img, x, y, drawWidth, drawHeight, this);
+            }
+        };
+        logoLabel.setPreferredSize(new Dimension(200, 80));
+        logoLabel.setBackground(Color.BLACK);
+        logoLabel.setOpaque(true);
+        return logoLabel;
+    }
+
     private JPanel createDetailsInfoPanel(Memo memo) {
         JPanel infoPanel = new JPanel(new GridLayout(3, 1));
         infoPanel.setBorder(new EmptyBorder(10, 10, 5, 10));
@@ -337,9 +339,6 @@ public class MemoGui extends JFrame {
         return infoPanel;
     }
 
-    /**
-     * 詳細表示ダイアログの本文表示エリアを生成します。
-     */
     private JTextArea createDetailsTextArea(Memo memo) {
         JTextArea detailsArea = new JTextArea(memo.getBody(), 15, 40);
         detailsArea.setEditable(false);
@@ -351,45 +350,28 @@ public class MemoGui extends JFrame {
         return detailsArea;
     }
 
-    /**
-     * 詳細表示ダイアログのボタンパネルを生成します。
-     */
     private JPanel createDetailsButtonPanel(JDialog dialog, Memo memo) {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton editButton = new JButton("編集");
         JButton deleteButton = new JButton("削除");
         JButton doneButton = new JButton("閉じる");
 
-        // 「編集」ボタン
         editButton.addActionListener(e -> {
             dialog.dispose();
-            MemoAdd editDialog = new MemoAdd(this, manager, model, memo);
+            MemoAdd editDialog = new MemoAdd(this, manager, memo);
             editDialog.setVisible(true);
+            resetSearchAndRefresh();
         });
 
-        // 「削除」ボタン
         deleteButton.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(this, "このメモを削除しますか？", "確認", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 manager.delete(memo);
-                // --- tagComboのリスナーを一時的に外す ---
-                ActionListener[] tagListeners = tagCombo.getActionListeners();
-                for (ActionListener l : tagListeners)
-                    tagCombo.removeActionListener(l);
-                // --- 値リセット ---
-                tagCombo.setSelectedIndex(0); // "すべて表示"を選択
-                if (searchField != null)
-                    searchField.setText("");
-                // --- リスナーを戻す ---
-                for (ActionListener l : tagListeners)
-                    tagCombo.addActionListener(l);
-                // --- 検索リスト再表示 ---
-                filterMemos("", "すべて表示", true); // ポップアップ抑制
-                refreshTagComboBox();
                 dialog.dispose();
+                resetSearchAndRefresh();
             }
         });
-        // 「閉じる」ボタン
+
         doneButton.addActionListener(e -> dialog.dispose());
 
         buttonPanel.add(editButton);
@@ -398,6 +380,12 @@ public class MemoGui extends JFrame {
         return buttonPanel;
     }
 
+    private void setupLabelStyle(JLabel label) {
+        label.setFont(new Font("Yu Gothic UI", Font.BOLD, 16));
+        label.setForeground(new Color(90, 90, 90));
+        label.setBorder(new EmptyBorder(10, 0, 10, 0));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+    }
 }
 
 /**
@@ -409,18 +397,19 @@ class MemoListCellRenderer extends DefaultListCellRenderer {
     public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
             boolean cellHasFocus) {
         JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        Memo memo = (Memo) value;
+        if (value instanceof Memo) {
+            Memo memo = (Memo) value;
 
-        String dateLabel = memo.getUpdatedAt() != null && !memo.getUpdatedAt().equals(memo.getCreatedAt())
-                ? "最終更新日: " + memo.getUpdatedAt()
-                : "作成日: " + memo.getCreatedAt();
+            String dateLabel = memo.getUpdatedAt() != null && !memo.getUpdatedAt().equals(memo.getCreatedAt())
+                    ? "最終更新日: " + memo.getUpdatedAt()
+                    : "作成日: " + memo.getCreatedAt();
 
-        // HTMLを使ってテキストをフォーマット
-        label.setText("<html><b>" + memo.getTitle() + " </b><br><span style='color:gray'> "
-                + String.join(", ", memo.getTags())
-                + "  " + dateLabel + "</span></html>");
+            label.setText("<html><b>" + memo.getTitle() + " </b><br><span style='color:gray'> "
+                    + String.join(", ", memo.getTags())
+                    + "  " + dateLabel + "</span></html>");
 
-        label.setBorder(new EmptyBorder(12, 10, 20, 8));
+            label.setBorder(new EmptyBorder(12, 10, 20, 8));
+        }
         return label;
     }
 }
