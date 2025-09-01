@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,42 +16,59 @@ import memo.Memo;
 /**
  * メモデータの永続化を担当するリポジトリクラスです。
  * SQLiteデータベースと直接やり取りを行い、メモのCRUD（作成、読み取り、更新、削除）処理を実装します。
- * SQLの実行やリソース管理は、このクラス内で完結します。
+ * アプリケーションの初回起動時には、データベースファイルとテーブルの初期化も行います。
  */
 public class MemoRepository {
 
-    // SQLiteデータベースへの接続URL。プロジェクトルートからの相対パスで指定します。
-    private static final String DB_URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/storage/hashmemo.db";
+    private static final String DB_URL = "jdbc:sqlite:storage/hashmemo.db";
 
     /**
      * MemoRepositoryのコンストラクタです。
-     * クラスのインスタンス化時に、SQLiteのJDBCドライバをロードします。
-     * ドライバが見つからない場合は、エラーメッセージを出力します。
+     * データベースとテーブルが正しくセットアップされていることを保証します。
      */
     public MemoRepository() {
-        try {
-            Class.forName("org.sqlite.JDBC");
-        } catch (ClassNotFoundException e) {
-            System.out.println("JDBCドライバのロードに失敗しました: " + e.getMessage());
+        initializeDatabase();
+    }
+
+    /**
+     * データベースファイルとテーブルが存在しない場合に、それらを初期化します。
+     * `CREATE TABLE IF NOT EXISTS` を使用するため、何度呼び出されても安全です。
+     */
+    private void initializeDatabase() {
+        // `memos` テーブルが存在しない場合に作成するSQL
+        // `created_at` にはデフォルトで現在時刻が設定される
+        String sql = "CREATE TABLE IF NOT EXISTS memos ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "title TEXT NOT NULL,"
+                + "body TEXT NOT NULL,"
+                + "tags TEXT,"
+                + "created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),"
+                + "updated_at TEXT"
+                + ");";
+
+        try (Connection conn = connect();
+                Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            throw new DataAccessException("データベースの初期化に失敗しました", e);
         }
     }
 
     /**
      * 新しいメモをデータベースに保存します（INSERT）。
-     * 作成日時はSQLの`datetime`関数を使い、データベース側で自動的に設定されます。
+     * 作成日時はテーブルのデフォルト値として自動的に設定されます。
      *
      * @param memo 保存するMemoオブジェクト。
      * @throws DataAccessException データベースへの保存に失敗した場合。
      */
     public void save(Memo memo) {
-        String sql = "INSERT INTO memos (title, body, tags, created_at) VALUES (?, ?, ?, datetime('now', 'localtime'))";
+        String sql = "INSERT INTO memos (title, body, tags) VALUES (?, ?, ?)";
 
         try (Connection conn = connect();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, memo.getTitle());
             pstmt.setString(2, memo.getBody());
-            // タグのリストをカンマ区切りの単一文字列に変換して保存
             pstmt.setString(3, String.join(",", memo.getTags()));
 
             pstmt.executeUpdate();
@@ -78,11 +96,7 @@ public class MemoRepository {
             pstmt.setString(3, String.join(",", memo.getTags()));
             pstmt.setInt(4, memo.getId());
 
-            int rows = pstmt.executeUpdate();
-            if (rows == 0) {
-                // 更新対象のレコードが存在しなかった場合
-                System.out.println("更新対象のメモが見つかりませんでした（id: " + memo.getId() + "）");
-            }
+            pstmt.executeUpdate();
 
         } catch (SQLException e) {
             throw new DataAccessException("メモの更新に失敗しました", e);
@@ -90,13 +104,27 @@ public class MemoRepository {
     }
 
     /**
-     * SQLiteデータベースへの接続を確立します。
+     * データベースからすべてのメモを取得します。
      *
-     * @return データベース接続を表すConnectionオブジェクト。
-     * @throws SQLException 接続に失敗した場合。
+     * @return データベース内の全Memoオブジェクトのリスト。存在しない場合は空のリストを返します。
+     * @throws DataAccessException 取得処理に失敗した場合。
      */
-    public Connection connect() throws SQLException {
-        return DriverManager.getConnection(DB_URL);
+    public List<Memo> getAll() {
+        List<Memo> list = new ArrayList<>();
+        String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos ORDER BY updated_at DESC, created_at DESC";
+
+        try (Connection conn = connect();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(createMemoFromResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            throw new DataAccessException("メモ一覧の取得に失敗しました", e);
+        }
+        return list;
     }
 
     /**
@@ -118,7 +146,6 @@ public class MemoRepository {
             pstmt.setString(2, "%" + keyword + "%");
             ResultSet rs = pstmt.executeQuery();
 
-            // 結果セットをループしてMemoオブジェクトに変換
             while (rs.next()) {
                 list.add(createMemoFromResultSet(rs));
             }
@@ -131,7 +158,8 @@ public class MemoRepository {
 
     /**
      * 指定されたタグを持つメモを検索します。
-     * まずLIKE句で候補を絞り込み、その後Java側で厳密なタグの一致を確認します。
+     * まずLIKE句でDB上の候補を絞り込み、その後Java側で厳密なタグの一致を確認します。
+     * この二段階のフィルタリングは、カンマ区切りの文字列としてタグを保存しているための設計です。
      *
      * @param tag 検索するタグ。
      * @return 条件に一致したMemoオブジェクトのリスト。
@@ -139,7 +167,6 @@ public class MemoRepository {
      */
     public List<Memo> findByTag(String tag) {
         List<Memo> list = new ArrayList<>();
-        // まずはLIKE検索で、タグが含まれる可能性のあるレコードを絞り込む
         String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos WHERE tags LIKE ?";
 
         try (Connection conn = connect();
@@ -152,7 +179,6 @@ public class MemoRepository {
                 String tagsStr = rs.getString("tags");
                 List<String> tags = parseTags(tagsStr);
 
-                // 取得したタグリストに、検索対象のタグが厳密に含まれているかを確認
                 if (tags.contains(tag)) {
                     list.add(createMemoFromResultSet(rs));
                 }
@@ -160,31 +186,6 @@ public class MemoRepository {
         } catch (SQLException e) {
             throw new DataAccessException("タグでの検索に失敗しました", e);
         }
-        return list;
-    }
-
-    /**
-     * データベースからすべてのメモを取得します（SELECT *）。
-     *
-     * @return データベース内の全Memoオブジェクトのリスト。存在しない場合は空のリストを返します。
-     * @throws DataAccessException 取得処理に失敗した場合。
-     */
-    public List<Memo> getAll() {
-        List<Memo> list = new ArrayList<>();
-        String sql = "SELECT id, title, body, tags, created_at, updated_at FROM memos";
-
-        try (Connection conn = connect();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(createMemoFromResultSet(rs));
-            }
-
-        } catch (SQLException e) {
-            throw new DataAccessException("メモ一覧の取得に失敗しました", e);
-        }
-
         return list;
     }
 
@@ -202,11 +203,21 @@ public class MemoRepository {
 
             pstmt.setInt(1, memo.getId());
             int affected = pstmt.executeUpdate();
-            return affected > 0; // 1行以上削除されたら成功
+            return affected > 0;
 
         } catch (SQLException e) {
             throw new DataAccessException("メモの削除に失敗しました", e);
         }
+    }
+
+    /**
+     * SQLiteデータベースへの接続を確立します。
+     *
+     * @return データベース接続を表すConnectionオブジェクト。
+     * @throws SQLException 接続に失敗した場合。
+     */
+    private Connection connect() throws SQLException {
+        return DriverManager.getConnection(DB_URL);
     }
 
     /**
@@ -234,7 +245,7 @@ public class MemoRepository {
      * カンマ区切りのタグ文字列を文字列のリストに変換します。
      *
      * @param tagsStr データベースから取得したカンマ区切りのタグ文字列。
-     * @return タグのリスト。
+     * @return タグのリスト。tagsStrがnullまたは空の場合は空のリストを返します。
      */
     private List<String> parseTags(String tagsStr) {
         if (tagsStr == null || tagsStr.isEmpty()) {

@@ -6,7 +6,7 @@
 
 | ライブラリ名 | バージョン | 用途 |
 |--------------|------------|------|
-| sqlite-jdbc  | 3.50.1.0   | SQLiteデータベースとの接続に使用 |
+| sqlite-jdbc  | 3.50.3.0   | SQLiteデータベースとの接続に使用 |
 
 ## 設定方法
 
@@ -15,7 +15,7 @@
 1. プロジェクトを右クリック → `Properties`
 2. `Java Build Path` を選択
 3. `Libraries` タブで `Add JARs...` または `Add External JARs...` を選択
-4. `lib/sqlite-jdbc-3.50.1.0.jar` を追加し、`Apply and Close` をクリック
+4. `lib/sqlite-jdbc-3.50.3.0.jar` を追加し、`Apply and Close` をクリック
 
 ### VS Code での補足
 
