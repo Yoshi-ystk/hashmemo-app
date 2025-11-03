@@ -224,7 +224,8 @@ public class MemoGui extends JFrame {
 
     /**
      * メモリストの表示を更新します。
-     * @param memos 表示するメモのリスト。nullの場合は全件取得し直します。
+     *
+     * @param memos       表示するメモのリスト。nullの場合は全件取得し直します。
      * @param selectedTag タグでの絞り込み条件。memosがnullの場合のみ使用します。
      */
     private void refreshMemoList(List<Memo> memos, String selectedTag) {
@@ -277,11 +278,11 @@ public class MemoGui extends JFrame {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                ImageIcon icon = new ImageIcon("assets/hashmemo_logo.png");
+                ImageIcon icon = new ImageIcon("src/assets/hashmemo_logo.png");
 
                 if (icon.getIconWidth() == -1) {
                     g.setColor(Color.RED);
-                    g.drawString("Image not found: assets/hashmemo_logo.png", 10, 20);
+                    g.drawString("Image not found: src/assets/hashmemo_logo.png", 10, 20);
                     return;
                 }
 

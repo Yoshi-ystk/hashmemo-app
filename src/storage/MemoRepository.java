@@ -20,7 +20,7 @@ import memo.Memo;
  */
 public class MemoRepository {
 
-    private static final String DB_URL = "jdbc:sqlite:storage/hashmemo.db";
+    private static final String DB_URL = "jdbc:sqlite:src/storage/hashmemo.db";
 
     /**
      * MemoRepositoryのコンストラクタです。

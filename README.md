@@ -15,16 +15,26 @@ GUI（Swing）で動作し、メモの作成・表示・削除・検索・編集
 - 無い場合は[公式 GitHub](https://github.com/xerial/sqlite-jdbc/releases)からダウンロードし、[lib](/lib)に配置してください。
 
 2. ターミナルでプロジェクトの[src](src)ディレクトリに移動します。
-3. Java ファイルをコンパイル位します。(初回、またはソースの変更時のみ)
+3. Java ファイルをコンパイルします。(初回、またはソースの変更時のみ)
 
+macOS / Linux ：
 ```bash
-javac -cp ".:../lib/sqlite-jdbc-3.50.3.0.jar" */*.java
+javac -d bin -cp ".:lib/sqlite-jdbc-3.50.3.0.jar" src/**/*.java
+```
+Windows :
+```bash
+javac -d bin -cp ".;lib/sqlite-jdbc-3.50.3.0.jar" src/app/*.java src/model/*.java src/dao/*.java
 ```
 
 4. アプリを起動します
 
+macOS / Linux ：
 ```bash
-java -cp ".:../lib/sqlite-jdbc-3.50.3.0.jar" app.MemoApp
+java -cp "bin:lib/sqlite-jdbc-3.50.3.0.jar" app.MemoApp
+```
+Windows :
+```bash
+java -cp "bin;lib/sqlite-jdbc-3.50.3.0.jar" app.MemoApp
 ```
 
 ---
