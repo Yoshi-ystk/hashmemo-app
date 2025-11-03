@@ -20,9 +20,6 @@ Thumbs.db
 *.log
 *.bak
 
-# ライブラリ（JAR）ファイル
-*.jar
-
-# SQLite 一時ファイル・設定ファイル
-*.db-journal
+# SQLite データベースファイルと一時ファイル
+*.db*.db-journal
 *.sqbpro
